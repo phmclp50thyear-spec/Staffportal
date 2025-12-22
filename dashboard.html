@@ -42,35 +42,37 @@
 
   <script>
     const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
-    const userInfo = document.getElementById('userInfo');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const mainContent = document.getElementById('main-content');
-    const loadingSpinner = document.getElementById('loading-spinner');
+const userInfo = document.getElementById('userInfo');
+const logoutBtn = document.getElementById('logoutBtn');
+const mainContent = document.getElementById('main-content');
+const loadingSpinner = document.getElementById('loading-spinner');
 
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
+async function checkAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session) {
-        window.location.href = 'index.html';
-      } else {
-        userInfo.innerHTML = `<strong>Logged in as:</strong><br>${session.user.email}`;
-        loadingSpinner.style.display = 'none';
-        mainContent.style.display = 'block';
-      }
-    }
+  if (!session) {
+    // If no session, kick back to login
+    window.location.href = 'index.html';
+  } else {
+    userInfo.innerHTML = `<strong>Logged in as:</strong><br>${session.user.email}`;
+    loadingSpinner.style.display = 'none';
+    mainContent.style.display = 'block';
+  }
+}
 
-    checkAuth();
+checkAuth();
 
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        window.location.href = 'index.html';
-      }
-    });
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') {
+    window.location.href = 'index.html';
+  }
+});
 
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-    });
+logoutBtn.addEventListener('click', async () => {
+  await supabase.auth.signOut();
+});
   </script>
 </body>
 </html>
+
 
