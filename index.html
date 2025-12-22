@@ -58,7 +58,7 @@
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        window.location.replace('./dashboard.html');
+        window.location.href = 'dashboard.html';
       } else {
         loadingScreen.classList.add('hidden');
       }
@@ -83,9 +83,10 @@
         btn.innerText = "Authorize Login";
         btn.disabled = false;
       } else {
-        window.location.replace('./dashboard.html');
+        window.location.href = 'dashboard.html';
       }
     });
   </script>
 </body>
 </html>
+
