@@ -51,42 +51,45 @@
 
   <script>
     const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
-    const form = document.getElementById('login-form');
-    const errorBox = document.getElementById('error');
-    const loadingScreen = document.getElementById('loading-screen');
+const form = document.getElementById('login-form');
+const errorBox = document.getElementById('error');
+const loadingScreen = document.getElementById('loading-screen');
 
-    async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = 'dashboard.html';
-      } else {
-        loadingScreen.classList.add('hidden');
-      }
-    }
-    init();
+async function init() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    // Navigate relative to the current folder
+    window.location.href = 'dashboard.html';
+  } else {
+    loadingScreen.classList.add('hidden');
+  }
+}
+init();
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorBox.classList.add('hidden');
-      const btn = document.getElementById('submit-btn');
-      btn.innerText = "Verifying...";
-      btn.disabled = true;
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorBox.classList.add('hidden');
+  const btn = document.getElementById('submit-btn');
+  btn.innerText = "Verifying...";
+  btn.disabled = true;
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (error) {
-        errorBox.textContent = error.message;
-        errorBox.classList.remove('hidden');
-        btn.innerText = "Authorize Login";
-        btn.disabled = false;
-      } else {
-        window.location.href = 'dashboard.html';
-      }
-    });
+  if (error) {
+    errorBox.textContent = error.message;
+    errorBox.classList.remove('hidden');
+    btn.innerText = "Authorize Login";
+    btn.disabled = false;
+  } else {
+    // Successful login landing
+    window.location.href = 'dashboard.html';
+  }
+});
   </script>
 </body>
 </html>
+
 
