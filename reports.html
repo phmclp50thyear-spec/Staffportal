@@ -66,43 +66,57 @@
   </main>
 
   <script>
-    // Initialize Supabase
+  { // This opening brace creates a protected scope
     const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
     const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
     const supabase = window.supabase.createClient(_URL, _KEY);
 
     async function loadReports() {
       try {
-        console.log("Fetching data from Supabase...");
-        const { data, error } = await supabase.from('patient_records').select('*');
-if (error) {
-    console.error("Supabase Error:", error.message);
-    document.getElementById('loadingState').innerText = "Database Error: " + error.message;
-    return;
-}
-console.log("Found rows:", data.length);
+        console.log("Verifying session...");
+        
+        // 1. Ensure user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.replace("index.html");
+          return;
+        }
 
-        // 1. Calculations
+        // 2. Fetch the records
+        console.log("Fetching patient data...");
+        const { data, error } = await supabase.from('patient_records').select('*');
+        
+        if (error) {
+          console.error("Database Error:", error.message);
+          document.getElementById('loadingState').innerText = "Database Error: " + error.message;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          document.getElementById('loadingState').innerText = "No records found. Please add patients in the dashboard.";
+          return;
+        }
+
+        // 3. Process Calculations
         const totalRev = data.reduce((sum, r) => sum + (r.amount || 0), 0);
         const census = data.length;
         const maxBill = Math.max(...data.map(r => r.amount || 0));
 
+        // Update UI Stats
         document.getElementById('totalRevenue').innerText = `₱${totalRev.toLocaleString()}`;
         document.getElementById('totalCensus').innerText = census;
         document.getElementById('avgRevenue').innerText = `₱${(totalRev / census).toLocaleString(undefined, {maximumFractionDigits:0})}`;
         document.getElementById('maxBill').innerText = `₱${maxBill.toLocaleString()}`;
 
-        // 2. Gender Data
+        // 4. Group Data for Charts
         const genderCounts = { Male: 0, Female: 0, Other: 0 };
-        data.forEach(r => { if(genderCounts[r.gender] !== undefined) genderCounts[r.gender]++; });
-
-        // 3. Payment Type Data (Revenue)
         const payRev = { HMO: 0, Cash: 0, Company: 0 };
-        data.forEach(r => { if(payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0); });
-
-        // 4. Age Bracket Data
         const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
+
         data.forEach(r => {
+          if (genderCounts[r.gender] !== undefined) genderCounts[r.gender]++;
+          if (payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0);
+          
           const a = r.age;
           if (a <= 18) ageBrackets['0-18']++;
           else if (a <= 35) ageBrackets['19-35']++;
@@ -111,46 +125,62 @@ console.log("Found rows:", data.length);
           else ageBrackets['65+']++;
         });
 
-        // Show Content
+        // 5. Reveal Content & Render Charts
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('reportContent').classList.remove('hidden');
 
-        // --- CHARTS ---
+        // Render Gender Doughnut
         new Chart(document.getElementById('genderChart'), {
           type: 'doughnut',
           data: {
-            labels: ['Male', 'Female', 'Other'],
-            datasets: [{ data: Object.values(genderCounts), backgroundColor: ['#007941', '#3b82f6', '#cbd5e1'] }]
-          },
-          options: { plugins: { legend: { position: 'bottom' } } }
+            labels: Object.keys(genderCounts),
+            datasets: [{ 
+              data: Object.values(genderCounts), 
+              backgroundColor: ['#007941', '#3b82f6', '#cbd5e1'] 
+            }]
+          }
         });
 
+        // Render Payment Pie
         new Chart(document.getElementById('paymentChart'), {
           type: 'pie',
           data: {
-            labels: ['HMO', 'Cash', 'Company'],
-            datasets: [{ data: Object.values(payRev), backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'] }]
-          },
-          options: { plugins: { legend: { position: 'bottom' } } }
+            labels: Object.keys(payRev),
+            datasets: [{ 
+              data: Object.values(payRev), 
+              backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'] 
+            }]
+          }
         });
 
+        // Render Age Bar
         new Chart(document.getElementById('ageChart'), {
           type: 'bar',
           data: {
             labels: Object.keys(ageBrackets),
-            datasets: [{ label: 'Number of Patients', data: Object.values(ageBrackets), backgroundColor: '#007941', borderRadius: 10 }]
+            datasets: [{ 
+              label: 'Total Patients', 
+              data: Object.values(ageBrackets), 
+              backgroundColor: '#007941', 
+              borderRadius: 8 
+            }]
           },
-          options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+          options: {
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
         });
 
       } catch (err) {
-        console.error("Report Error:", err);
-        document.getElementById('loadingState').innerText = "Error loading reports: " + err.message;
+        console.error("Critical Error:", err);
+        document.getElementById('loadingState').innerText = "Error: " + err.message;
       }
     }
 
+    // Run the app
     loadReports();
-  </script>
+  } // Closing brace for the protected scope
+</script>
 </body>
 </html>
+
 
