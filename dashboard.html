@@ -4,75 +4,72 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Staff Portal | Dashboard</title>
-
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    :root {
-      --corp-green: #007941;
-    }
+    :root { --corp-green: #007941; }
+    #main-content { display: none; }
+    #loading-spinner { position: fixed; inset: 0; background: white; display: flex; align-items: center; justify-content: center; z-index: 50; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-  <!-- Navbar -->
-  <nav class="bg-white shadow-sm border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8 w-auto" />
-        <span class="font-extrabold text-gray-800 tracking-tight">Staff Portal</span>
+  <div id="loading-spinner">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#007941]"></div>
+  </div>
+
+  <div id="main-content">
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8 w-auto" />
+          <span class="font-extrabold text-gray-800 tracking-tight">Staff Portal</span>
+        </div>
+        <button id="logoutBtn" class="px-4 py-2 rounded-xl bg-[var(--corp-green)] text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition">
+          Logout
+        </button>
       </div>
+    </nav>
 
-      <button id="logoutBtn"
-        class="px-4 py-2 rounded-xl bg-[var(--corp-green)] text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition">
-        Logout
-      </button>
-    </div>
-  </nav>
-
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto p-6">
-    <div class="bg-white rounded-3xl shadow p-8">
-      <h1 class="text-2xl font-extrabold text-gray-900 mb-2">Dashboard</h1>
-      <p class="text-gray-500 text-sm">Welcome to the Staff Portal</p>
-
-      <div id="userInfo" class="mt-6 p-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm text-gray-700"></div>
-    </div>
-  </main>
+    <main class="max-w-7xl mx-auto p-6">
+      <div class="bg-white rounded-3xl shadow p-8">
+        <h1 class="text-2xl font-extrabold text-gray-900 mb-2">Dashboard</h1>
+        <p class="text-gray-500 text-sm">Welcome to the Staff Portal</p>
+        <div id="userInfo" class="mt-6 p-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm text-gray-700"></div>
+      </div>
+    </main>
+  </div>
 
   <script>
-  const supabase = window.supabase.createClient(
-    'https://xpdtzvxjlguhcxkgowsg.supabase.co',
-    'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
-  );
+    const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
+    const userInfo = document.getElementById('userInfo');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const mainContent = document.getElementById('main-content');
+    const loadingSpinner = document.getElementById('loading-spinner');
 
-  const userInfo = document.getElementById('userInfo');
-  const logoutBtn = document.getElementById('logoutBtn');
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
 
-  // ✅ Wait for auth state to be ready
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (!session) {
-      window.location.href = './index.html';
-      return;
+      if (!session) {
+        window.location.replace('./index.html');
+      } else {
+        userInfo.innerHTML = `<strong>Logged in as:</strong><br>${session.user.email}`;
+        loadingSpinner.style.display = 'none';
+        mainContent.style.display = 'block';
+      }
     }
 
-    userInfo.innerHTML = `
-      <strong>Logged in as:</strong><br>
-      ${session.user.email}
-    `;
-  });
+    checkAuth();
 
-  logoutBtn.addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    window.location.href = './index.html';
-  });
-</script>
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        window.location.replace('./index.html');
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+    });
+  </script>
 </body>
 </html>
-
-
-
