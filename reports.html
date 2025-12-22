@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Analytics Dashboard | Professional</title>
-  
+  <title>Staff Portal | Analytics</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
     body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
-    .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+    .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
     .emerald-gradient { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
   </style>
 </head>
@@ -24,137 +22,119 @@
         <p class="text-slate-400 text-sm font-medium">Real-time Performance Metrics</p>
       </div>
       <div class="flex gap-3">
-        <button onclick="window.location.reload()" class="bg-slate-100 text-slate-600 px-5 py-2.5 rounded-2xl font-bold text-sm hover:bg-slate-200 transition">Refresh</button>
-        <a href="dashboard.html" class="bg-emerald-600 text-white px-5 py-2.5 rounded-2xl font-bold text-sm hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">← Dashboard</a>
+        <a href="dashboard.html" class="bg-emerald-600 text-white px-5 py-2.5 rounded-2xl font-bold text-sm hover:bg-emerald-700 transition shadow-lg">← Back to Dashboard</a>
       </div>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
       <div class="emerald-gradient p-6 rounded-[2rem] text-white card-shadow">
         <p class="text-[10px] uppercase tracking-widest font-bold opacity-80 mb-2">Total Revenue</p>
-        <h2 id="rev" class="text-3xl font-black">₱0.00</h2>
+        <h2 id="totalRevenue" class="text-3xl font-black">₱0.00</h2>
       </div>
       <div class="bg-white p-6 rounded-[2rem] card-shadow">
-        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Patient Census</p>
-        <h2 id="cen" class="text-3xl font-black text-slate-800">0</h2>
+        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Total Census</p>
+        <h2 id="totalCensus" class="text-3xl font-black text-slate-800">0</h2>
       </div>
       <div class="bg-white p-6 rounded-[2rem] card-shadow">
-        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Avg. per Patient</p>
-        <h2 id="avg" class="text-3xl font-black text-blue-600">₱0.00</h2>
+        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Avg per Patient</p>
+        <h2 id="avgRevenue" class="text-3xl font-black text-blue-600">₱0.00</h2>
       </div>
       <div class="bg-white p-6 rounded-[2rem] card-shadow">
-        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Max Transaction</p>
-        <h2 id="max" class="text-3xl font-black text-slate-800">₱0.00</h2>
+        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Highest Bill</p>
+        <h2 id="maxBill" class="text-3xl font-black text-orange-600">₱0.00</h2>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div id="reportContent" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] card-shadow">
-        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Patient Age Demographics</h3>
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Patient Census by Age Bracket</h3>
         <div class="h-[300px]"><canvas id="ageChart"></canvas></div>
       </div>
-      
       <div class="bg-white p-8 rounded-[2.5rem] card-shadow">
-        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 text-center">Gender Split</h3>
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 text-center">Census by Gender</h3>
         <div class="h-[300px] flex items-center justify-center">
-          <canvas id="genChart"></canvas>
+          <canvas id="genderChart"></canvas>
         </div>
       </div>
     </div>
 
-    <div id="debugInfo" class="mt-8 text-center text-[10px] text-slate-300 font-mono uppercase tracking-widest">System Ready</div>
+    <div id="loadingState" class="mt-8 text-center text-gray-400 font-bold">Fetching clinical data...</div>
   </div>
 
   <script>
+    // Initialize Supabase (Using your specific credentials)
     const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
     const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
     const supabase = window.supabase.createClient(_URL, _KEY);
 
-    async function fetchData() {
-      const debug = document.getElementById('debugInfo');
-      
+    async function loadReports() {
       try {
         const { data, error } = await supabase.from('patient_records').select('*');
 
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          debug.innerText = "Connected, but the table 'patient_records' returned 0 rows.";
+        if (error) {
+          document.getElementById('loadingState').innerText = "Database Error: " + error.message;
           return;
         }
 
-        // --- DEBUGGING STEP ---
-        console.log("Raw Data from Supabase:");
-        console.table(data); // This shows you the exact column names and values in your console
-        // ----------------------
+        if (!data || data.length === 0) {
+          document.getElementById('loadingState').innerText = "No records found.";
+          return;
+        }
 
-        let total = 0;
-        let max = 0;
-        const ages = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
-        const genders = { 'Male': 0, 'Female': 0, 'Other': 0 };
+        // --- 1. CALCULATIONS (Restored from your working code) ---
+        const totalRev = data.reduce((sum, r) => sum + (r.amount || 0), 0);
+        const census = data.length;
+        const maxBill = Math.max(...data.map(r => r.amount || 0));
 
+        document.getElementById('totalRevenue').innerText = `₱${totalRev.toLocaleString()}`;
+        document.getElementById('totalCensus').innerText = census;
+        document.getElementById('avgRevenue').innerText = `₱${(totalRev / census).toLocaleString(undefined, {maximumFractionDigits:0})}`;
+        document.getElementById('maxBill').innerText = `₱${maxBill.toLocaleString()}`;
+
+        // --- 2. GENDER DATA (Restored from your working code) ---
+        const genderCounts = { Male: 0, Female: 0, Other: 0 };
+        data.forEach(r => { if(genderCounts[r.gender] !== undefined) genderCounts[r.gender]++; });
+
+        // --- 3. AGE BRACKET DATA (Restored from your working code) ---
+        const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
         data.forEach(r => {
-          const val = parseFloat(r.amount) || 0;
-          total += val;
-          if (val > max) max = val;
-
-          // Safe Age Parsing
-          const a = parseInt(r.age);
-          if (a <= 18) ages['0-18']++;
-          else if (a <= 35) ages['19-35']++;
-          else if (a <= 50) ages['36-50']++;
-          else if (a <= 65) ages['51-65']++;
-          else ages['65+']++;
-
-          // Safe Gender Parsing (Handles 'male', 'MALE', or 'Male')
-          if (r.gender) {
-            const g = r.gender.trim().toLowerCase();
-            if (g === 'male') genders['Male']++;
-            else if (g === 'female') genders['Female']++;
-            else genders['Other']++;
-          }
+          const a = r.age;
+          if (a <= 18) ageBrackets['0-18']++;
+          else if (a <= 35) ageBrackets['19-35']++;
+          else if (a <= 50) ageBrackets['36-50']++;
+          else if (a <= 65) ageBrackets['51-65']++;
+          else ageBrackets['65+']++;
         });
 
-        document.getElementById('rev').innerText = "₱" + total.toLocaleString();
-        document.getElementById('cen').innerText = data.length;
-        document.getElementById('avg').innerText = "₱" + (total / data.length).toLocaleString(undefined, {maximumFractionDigits: 0});
-        document.getElementById('max').innerText = "₱" + max.toLocaleString();
+        // Hide loading text
+        document.getElementById('loadingState').classList.add('hidden');
 
-        renderCharts(ages, genders);
-        debug.innerText = "Data Synced Successfully";
+        // --- 4. CHARTS (Restored from your working code) ---
+        new Chart(document.getElementById('genderChart'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Male', 'Female', 'Other'],
+            datasets: [{ data: Object.values(genderCounts), backgroundColor: ['#007941', '#3b82f6', '#cbd5e1'] }]
+          },
+          options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
 
-      } catch (e) {
-        debug.innerText = "Error: " + e.message;
-        console.error(e);
+        new Chart(document.getElementById('ageChart'), {
+          type: 'bar',
+          data: {
+            labels: Object.keys(ageBrackets),
+            datasets: [{ label: 'Number of Patients', data: Object.values(ageBrackets), backgroundColor: '#007941', borderRadius: 10 }]
+          },
+          options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+      } catch (err) {
+        document.getElementById('loadingState').innerText = "Error: " + err.message;
       }
     }
 
-    function renderCharts(ageData, genderData) {
-      // Clear existing charts if any to prevent overlapping
-      const ageCtx = document.getElementById('ageChart').getContext('2d');
-      const genCtx = document.getElementById('genChart').getContext('2d');
-      
-      new Chart(ageCtx, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(ageData),
-          datasets: [{ label: 'Patients', data: Object.values(ageData), backgroundColor: '#10b981', borderRadius: 10 }]
-        },
-        options: { maintainAspectRatio: false }
-      });
-
-      new Chart(genCtx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(genderData),
-          datasets: [{ data: Object.values(genderData), backgroundColor: ['#059669', '#3b82f6', '#cbd5e1'] }]
-        },
-        options: { maintainAspectRatio: false, cutout: '70%' }
-      });
-    }
-
-    window.onload = fetchData;
+    // Direct trigger
+    loadReports();
   </script>
 </body>
 </html>
-
