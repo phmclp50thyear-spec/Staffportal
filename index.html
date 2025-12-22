@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Staff Portal | Login</title>
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -21,16 +19,30 @@
     body {
       margin: 0;
       padding: 0;
-      overflow-x: hidden;
+      overflow: hidden; /* Changed to hidden to contain the animation canvas */
       background: radial-gradient(circle at center, var(--corp-light) 0%, var(--corp-green) 40%, var(--corp-dark) 100%);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       min-height: 100vh;
       display: flex;
+      flex-direction: column; /* Allow space for footer */
       align-items: center;
       justify-content: center;
     }
 
+    /* Animation Canvas Layer */
+    #moleculeCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
     .glass-card {
+      position: relative;
+      z-index: 10;
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -41,26 +53,36 @@
       border-color: var(--corp-green);
       box-shadow: 0 0 0 3px rgba(0, 121, 65, 0.1);
     }
+    
+    .project-footer {
+      position: fixed;
+      bottom: 20px;
+      z-index: 20;
+      color: rgba(255,255,255,0.5);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
   </style>
 </head>
 
 <body class="p-4">
 
+  <canvas id="moleculeCanvas"></canvas>
+
   <div class="w-full max-w-sm md:max-w-md mx-auto">
     <div class="glass-card rounded-[2.5rem] p-8 md:p-12 border border-white/40">
 
-      <!-- Corporate Logo -->
       <div class="flex justify-center mb-8">
         <img src="https://i.imgur.com/VbZKWAf.png" alt="Corporate Logo" class="h-20 md:h-28 w-auto object-contain" />
       </div>
 
-      <!-- Header -->
       <div class="text-center mb-10">
         <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Staff Portal</h2>
         <p class="text-gray-500 mt-2 text-[10px] md:text-xs uppercase tracking-[0.2em] font-bold">Medical Access Point</p>
       </div>
 
-      <!-- Login Form -->
       <form id="login-form" class="space-y-6">
         <div class="space-y-2">
           <label class="block pl-1 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">Email Address</label>
@@ -82,7 +104,6 @@
 
       <p id="error" class="hidden text-red-600 font-semibold text-center mt-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs"></p>
 
-      <!-- Footer Status -->
       <div class="mt-12 pt-6 border-t border-gray-100/80 text-center">
         <div class="flex items-center justify-center gap-2">
           <div class="w-1 h-1 rounded-full bg-green-500 animate-pulse"></div>
@@ -93,8 +114,57 @@
     </div>
   </div>
 
+  <div class="project-footer">Created by: Projectvibe</div>
+
   <script>
   document.addEventListener("DOMContentLoaded", () => {
+    // --- MOLECULE ANIMATION SCRIPT ---
+    const canvas = document.getElementById('moleculeCanvas');
+    const ctx = canvas.getContext('2d');
+    let atoms = [];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Atom {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 2 + 1;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 40; i++) atoms.push(new Atom());
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      atoms.forEach(atom => {
+        atom.update();
+        atom.draw();
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // --- ORIGINAL SUPABASE SCRIPT ---
     const supabase = window.supabase.createClient(
       'https://xpdtzvxjlguhcxkgowsg.supabase.co',
       'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
@@ -103,7 +173,6 @@
     const form = document.getElementById('login-form');
     const errorBox = document.getElementById('error');
 
-    // Check if already logged in - if so, go to dashboard
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         window.location.replace("dashboard.html");
@@ -124,8 +193,6 @@
         errorBox.classList.remove('hidden');
         return;
       }
-
-      // Landing on dashboard
       window.location.href = "dashboard.html";
     });
   });
@@ -133,5 +200,3 @@
 
 </body>
 </html>
-
-
