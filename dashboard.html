@@ -194,10 +194,20 @@
       }
 
       window.switchView = (viewName) => {
+        if (viewName === 'reports') {
+          window.location.href = "reports.html";
+          return;
+        }
+
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('view-active'));
         document.querySelectorAll('.nav-link').forEach(l => l.className = 'text-sm font-bold text-gray-500 hover:text-[#007941] nav-link');
-        document.getElementById(`view-${viewName}`).classList.add('view-active');
-        document.getElementById(`nav-${viewName}`).className = 'text-sm font-bold text-[#007941] border-b-2 border-[#007941] pb-1 nav-link';
+
+        const targetView = document.getElementById(`view-${viewName}`);
+        const targetNav = document.getElementById(`nav-${viewName}`);
+
+        if (targetView) targetView.classList.add('view-active');
+        if (targetNav) targetNav.className = 'text-sm font-bold text-[#007941] border-b-2 border-[#007941] pb-1 nav-link';
+
         if(viewName === 'records') fetchRecords();
       };
 
