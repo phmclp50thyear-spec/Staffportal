@@ -75,14 +75,12 @@
       try {
         console.log("Fetching data from Supabase...");
         const { data, error } = await supabase.from('patient_records').select('*');
-        
-        if (error) throw error;
-        if (!data || data.length === 0) {
-            document.getElementById('loadingState').innerText = "No data found in database.";
-            return;
-        }
-
-        console.log("Data received:", data);
+if (error) {
+    console.error("Supabase Error:", error.message);
+    document.getElementById('loadingState').innerText = "Database Error: " + error.message;
+    return;
+}
+console.log("Found rows:", data.length);
 
         // 1. Calculations
         const totalRev = data.reduce((sum, r) => sum + (r.amount || 0), 0);
@@ -155,3 +153,4 @@
   </script>
 </body>
 </html>
+
