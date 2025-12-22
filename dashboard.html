@@ -45,6 +45,8 @@
   </main>
 
   <script>
+// We use a self-executing function to prevent "Already Declared" errors
+(function() {
   const supabase = window.supabase.createClient(
     'https://xpdtzvxjlguhcxkgowsg.supabase.co',
     'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
@@ -54,13 +56,11 @@
   const logoutBtn = document.getElementById('logoutBtn');
 
   // 1. AUTH GUARD & STATE LISTENER
-  // This handles both the initial load AND the logout redirect automatically
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT' || !session) {
-      console.log("User signed out or no session, redirecting...");
+      console.log("Redirecting to login...");
       window.location.replace("index.html");
     } else {
-      console.log("User is active:", session.user.email);
       userInfo.innerHTML = `
         <strong>Logged in as:</strong><br>
         ${session.user.email}
@@ -68,21 +68,19 @@
     }
   });
 
-  // 2. LOGOUT BUTTON
-  logoutBtn.addEventListener('click', async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      // Note: onAuthStateChange above will handle the window.location.replace
-    } catch (err) {
-      console.error("Error during logout:", err.message);
-      // Fallback redirect if signout hits an error
-      window.location.replace("index.html");
+  // 2. LOGOUT BUTTON (Simplified like your previous project)
+  logoutBtn.onclick = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+       console.error("Logout error:", error.message);
+       window.location.replace("index.html");
     }
-  });
+  };
+})();
 </script>
 </body>
 </html>
+
 
 
 
