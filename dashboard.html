@@ -45,40 +45,34 @@
   </main>
 
   <script>
-    // Initialize Supabase
-    const supabase = window.supabase.createClient(
-      'https://xpdtzvxjlguhcxkgowsg.supabase.co',
-      'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
-    );
+  const supabase = window.supabase.createClient(
+    'https://xpdtzvxjlguhcxkgowsg.supabase.co',
+    'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
+  );
 
-    const userInfo = document.getElementById('userInfo');
-    const logoutBtn = document.getElementById('logoutBtn');
+  const userInfo = document.getElementById('userInfo');
+  const logoutBtn = document.getElementById('logoutBtn');
 
-    // AUTH GUARD
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        window.location.href = 'index.html'; // login page
-        return;
-      }
-
-      userInfo.innerHTML = `
-        <strong>Logged in as:</strong><br>
-        ${session.user.email}
-      `;
+  // ✅ Wait for auth state to be ready
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (!session) {
+      window.location.href = './index.html';
+      return;
     }
 
-    checkAuth();
+    userInfo.innerHTML = `
+      <strong>Logged in as:</strong><br>
+      ${session.user.email}
+    `;
+  });
 
-    // LOGOUT
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      window.location.href = './index.html';
-    });
-  </script>
-
+  logoutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = './index.html';
+  });
+</script>
 </body>
 </html>
+
 
 
