@@ -3,184 +3,195 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff Portal | Reports</title>
+  <title>Analytics | Professional Staff Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    .glass-card { 
+      background: rgba(255, 255, 255, 0.9); 
+      backdrop-filter: blur(10px); 
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease;
+    }
+    .glass-card:hover { transform: translateY(-4px); }
+    .stat-gradient { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+    @media print { .no-print { display: none; } }
+  </script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="text-slate-900">
 
-  <nav class="bg-white shadow-sm border-b border-gray-200 h-20 flex items-center px-6">
-    <div class="max-w-7xl mx-auto w-full flex justify-between items-center">
-      <div class="flex items-center gap-4">
-        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10 w-auto" />
-        <span class="font-extrabold text-gray-900 tracking-tight">Analytics Report</span>
+  <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 no-print">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200">
+          <svg class="text-white w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg tracking-tight">Clinical Insights</h1>
+          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Executive Summary</p>
+        </div>
       </div>
-      <a href="dashboard.html" class="text-sm font-bold text-[#007941] hover:underline">← Back to Dashboard</a>
+      <div class="flex items-center gap-4">
+        <button onclick="window.print()" class="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition no-print">Print PDF</button>
+        <a href="dashboard.html" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-200">Dashboard</a>
+      </div>
     </div>
   </nav>
 
-  <main class="max-w-7xl mx-auto p-6 space-y-8">
+  <main class="max-w-7xl mx-auto p-6 lg:p-10">
     
-    <div id="loadingState" class="text-center py-20 text-gray-400 font-bold animate-pulse">
-        Fetching clinical data...
+    <div id="loadingState" class="flex flex-col items-center justify-center py-40">
+        <div class="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-400 font-semibold">Analyzing Clinical Database...</p>
     </div>
 
-    <div id="reportContent" class="hidden space-y-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Revenue</p>
-            <h2 id="totalRevenue" class="text-3xl font-black text-[#007941]">₱0.00</h2>
+    <div id="reportContent" class="hidden animate-in fade-in duration-700">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+          <div>
+            <h2 class="text-4xl font-black text-slate-900 tracking-tight">Performance Overview</h2>
+            <p class="text-slate-500 font-medium">Real-time statistics for Dec 15 - Dec 20, 2025</p>
           </div>
-          <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Census</p>
-            <h2 id="totalCensus" class="text-3xl font-black text-gray-900">0</h2>
+          <div class="px-4 py-2 bg-emerald-50 rounded-full border border-emerald-100">
+            <span class="text-emerald-700 text-xs font-bold uppercase tracking-wider">● Database Live</span>
           </div>
-          <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Avg per Patient</p>
-            <h2 id="avgRevenue" class="text-3xl font-black text-blue-600">₱0.00</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+          <div class="glass-card p-6 rounded-[2rem] stat-gradient text-white">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">Total Revenue</p>
+            <h3 id="totalRevenue" class="text-3xl font-black">₱0.00</h3>
           </div>
-          <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Highest Bill</p>
-            <h2 id="maxBill" class="text-3xl font-black text-orange-600">₱0.00</h2>
+          <div class="glass-card p-6 rounded-[2rem]">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Patient Census</p>
+            <h3 id="totalCensus" class="text-3xl font-black text-slate-900">0</h3>
+          </div>
+          <div class="glass-card p-6 rounded-[2rem]">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Average Ticket</p>
+            <h3 id="avgRevenue" class="text-3xl font-black text-emerald-600">₱0.00</h3>
+          </div>
+          <div class="glass-card p-6 rounded-[2rem]">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Highest Bill</p>
+            <h3 id="maxBill" class="text-3xl font-black text-slate-900">₱0.00</h3>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-            <h3 class="font-black text-gray-900 mb-6 uppercase text-xs tracking-widest text-center">Census by Gender</h3>
-            <div class="max-w-[300px] mx-auto"><canvas id="genderChart"></canvas></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 glass-card p-8 rounded-[2.5rem]">
+            <div class="flex items-center justify-between mb-8">
+              <h3 class="font-black text-slate-800 uppercase text-xs tracking-widest">Age Demographics</h3>
+              <span class="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-500">BAR CHART</span>
+            </div>
+            <canvas id="ageChart" style="max-height: 350px;"></canvas>
           </div>
 
-          <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-            <h3 class="font-black text-gray-900 mb-6 uppercase text-xs tracking-widest text-center">Revenue by Type</h3>
-            <div class="max-w-[300px] mx-auto"><canvas id="paymentChart"></canvas></div>
-          </div>
-
-          <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm col-span-1 md:col-span-2">
-            <h3 class="font-black text-gray-900 mb-6 uppercase text-xs tracking-widest">Patient Census by Age Bracket</h3>
-            <canvas id="ageChart" style="max-height: 300px;"></canvas>
+          <div class="space-y-8">
+            <div class="glass-card p-8 rounded-[2.5rem]">
+              <h3 class="font-black text-slate-800 uppercase text-xs tracking-widest mb-6 text-center">Gender Ratio</h3>
+              <canvas id="genderChart"></canvas>
+            </div>
+            <div class="glass-card p-8 rounded-[2.5rem]">
+              <h3 class="font-black text-slate-800 uppercase text-xs tracking-widest mb-6 text-center">Payment Channels</h3>
+              <canvas id="paymentChart"></canvas>
+            </div>
           </div>
         </div>
     </div>
   </main>
 
   <script>
-  { // This opening brace creates a protected scope
-    const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
-    const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
-    const supabase = window.supabase.createClient(_URL, _KEY);
+    {
+      const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
+      const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
+      const supabase = window.supabase.createClient(_URL, _KEY);
 
-    async function loadReports() {
-      try {
-        console.log("Verifying session...");
-        
-        // 1. Ensure user is authenticated
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          window.location.replace("index.html");
-          return;
+      async function loadReports() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) { window.location.replace("index.html"); return; }
+
+          const { data, error } = await supabase.from('patient_records').select('*');
+          if (error) throw error;
+
+          if (!data || data.length === 0) {
+            document.getElementById('loadingState').innerHTML = `<p class="text-slate-400">No data found.</p>`;
+            return;
+          }
+
+          // Data Processing
+          const totalRev = data.reduce((sum, r) => sum + (r.amount || 0), 0);
+          const census = data.length;
+          const maxBill = Math.max(...data.map(r => r.amount || 0));
+
+          document.getElementById('totalRevenue').innerText = `₱${totalRev.toLocaleString()}`;
+          document.getElementById('totalCensus').innerText = census;
+          document.getElementById('avgRevenue').innerText = `₱${(totalRev / census).toLocaleString(undefined, {maximumFractionDigits:0})}`;
+          document.getElementById('maxBill').innerText = `₱${maxBill.toLocaleString()}`;
+
+          const genderCounts = { Male: 0, Female: 0, Other: 0 };
+          const payRev = { HMO: 0, Cash: 0, Company: 0 };
+          const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
+
+          data.forEach(r => {
+            if(genderCounts[r.gender] !== undefined) genderCounts[r.gender]++;
+            if(payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0);
+            const a = r.age;
+            if (a <= 18) ageBrackets['0-18']++;
+            else if (a <= 35) ageBrackets['19-35']++;
+            else if (a <= 50) ageBrackets['36-50']++;
+            else if (a <= 65) ageBrackets['51-65']++;
+            else ageBrackets['65+']++;
+          });
+
+          document.getElementById('loadingState').classList.add('hidden');
+          document.getElementById('reportContent').classList.remove('hidden');
+
+          renderCharts(genderCounts, payRev, ageBrackets);
+        } catch (err) {
+          document.getElementById('loadingState').innerText = "Error: " + err.message;
         }
+      }
 
-        // 2. Fetch the records
-        console.log("Fetching patient data...");
-        const { data, error } = await supabase.from('patient_records').select('*');
-        
-        if (error) {
-          console.error("Database Error:", error.message);
-          document.getElementById('loadingState').innerText = "Database Error: " + error.message;
-          return;
-        }
+      function renderCharts(g, p, a) {
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+        Chart.defaults.color = '#64748b';
 
-        if (!data || data.length === 0) {
-          document.getElementById('loadingState').innerText = "No records found. Please add patients in the dashboard.";
-          return;
-        }
-
-        // 3. Process Calculations
-        const totalRev = data.reduce((sum, r) => sum + (r.amount || 0), 0);
-        const census = data.length;
-        const maxBill = Math.max(...data.map(r => r.amount || 0));
-
-        // Update UI Stats
-        document.getElementById('totalRevenue').innerText = `₱${totalRev.toLocaleString()}`;
-        document.getElementById('totalCensus').innerText = census;
-        document.getElementById('avgRevenue').innerText = `₱${(totalRev / census).toLocaleString(undefined, {maximumFractionDigits:0})}`;
-        document.getElementById('maxBill').innerText = `₱${maxBill.toLocaleString()}`;
-
-        // 4. Group Data for Charts
-        const genderCounts = { Male: 0, Female: 0, Other: 0 };
-        const payRev = { HMO: 0, Cash: 0, Company: 0 };
-        const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
-
-        data.forEach(r => {
-          if (genderCounts[r.gender] !== undefined) genderCounts[r.gender]++;
-          if (payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0);
-          
-          const a = r.age;
-          if (a <= 18) ageBrackets['0-18']++;
-          else if (a <= 35) ageBrackets['19-35']++;
-          else if (a <= 50) ageBrackets['36-50']++;
-          else if (a <= 65) ageBrackets['51-65']++;
-          else ageBrackets['65+']++;
-        });
-
-        // 5. Reveal Content & Render Charts
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('reportContent').classList.remove('hidden');
-
-        // Render Gender Doughnut
         new Chart(document.getElementById('genderChart'), {
           type: 'doughnut',
           data: {
-            labels: Object.keys(genderCounts),
-            datasets: [{ 
-              data: Object.values(genderCounts), 
-              backgroundColor: ['#007941', '#3b82f6', '#cbd5e1'] 
-            }]
-          }
+            labels: Object.keys(g),
+            datasets: [{ data: Object.values(g), backgroundColor: ['#059669', '#3b82f6', '#e2e8f0'], borderWeight: 0, hoverOffset: 10 }]
+          },
+          options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: 'bold', size: 11 } } } } }
         });
 
-        // Render Payment Pie
         new Chart(document.getElementById('paymentChart'), {
           type: 'pie',
           data: {
-            labels: Object.keys(payRev),
-            datasets: [{ 
-              data: Object.values(payRev), 
-              backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'] 
-            }]
-          }
+            labels: Object.keys(p),
+            datasets: [{ data: Object.values(p), backgroundColor: ['#10b981', '#f59e0b', '#8b5cf6'], borderWeight: 0 }]
+          },
+          options: { plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: 'bold', size: 11 } } } } }
         });
 
-        // Render Age Bar
         new Chart(document.getElementById('ageChart'), {
           type: 'bar',
           data: {
-            labels: Object.keys(ageBrackets),
-            datasets: [{ 
-              label: 'Total Patients', 
-              data: Object.values(ageBrackets), 
-              backgroundColor: '#007941', 
-              borderRadius: 8 
-            }]
+            labels: Object.keys(a),
+            datasets: [{ label: 'Patients', data: Object.values(a), backgroundColor: '#10b981', borderRadius: 12, barThickness: 40 }]
           },
-          options: {
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          options: { 
+            plugins: { legend: { display: false } },
+            scales: { y: { grid: { display: false }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } }
           }
         });
-
-      } catch (err) {
-        console.error("Critical Error:", err);
-        document.getElementById('loadingState').innerText = "Error: " + err.message;
       }
-    }
 
-    // Run the app
-    loadReports();
-  } // Closing brace for the protected scope
-</script>
+      loadReports();
+    }
+  </script>
 </body>
 </html>
-
-
