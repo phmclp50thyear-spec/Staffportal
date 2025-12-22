@@ -117,13 +117,14 @@
         return;
       }
 
-      window.location.href = 'dashboard.html';
+      window.location.href = "dashboard.html";
     });
 
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) window.location.href = 'dashboard.html';
+      if (data.session) window.location.href = "dashboard.html";
     });
   </script>
 
 </body>
 </html>
+
