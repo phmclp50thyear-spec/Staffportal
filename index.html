@@ -31,7 +31,7 @@
     .glass-card {
       position: relative;
       width: 100%;
-      max-width: 380px; /* Made smaller */
+      max-width: 380px; 
       background: var(--glass-bg);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -44,7 +44,7 @@
       opacity: 0;
       transform: translateZ(-300px) scale(0.3);
       animation: cardProject 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      overflow: hidden; /* Contains the scanner */
+      overflow: hidden; 
     }
 
     /* --- SCANNER EFFECT --- */
@@ -54,16 +54,13 @@
       top: -100%;
       left: 0;
       width: 100%;
-      height: 100%;
+      height: 4px;
       background: linear-gradient(
         to bottom,
         transparent,
-        rgba(16, 185, 129, 0.2),
         var(--corp-light),
-        rgba(16, 185, 129, 0.2),
         transparent
       );
-      height: 4px;
       animation: scan 4s linear infinite;
       box-shadow: 0 0 15px var(--corp-light);
     }
@@ -93,7 +90,7 @@
     .social-footnote:hover { width: 140px; background: rgba(255, 255, 255, 0.15); }
 
     .fb-icon {
-      background: rgba(255, 255, 255, 0.2); /* Glassy icon bg */
+      background: rgba(255, 255, 255, 0.2);
       width: 26px; height: 26px;
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
@@ -161,39 +158,87 @@
     <div class="fb-icon">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
     </div>
-    <div class="hidden-actions ml-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-4">
+    <div class="hidden-actions ml-3 flex gap-4">
       <span class="text-[10px] font-bold text-white uppercase">Follow</span>
     </div>
   </div>
 
   <script>
-    // Molecule Animation
+    // --- RESTORED ORIGINAL MOLECULE ANIMATION ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let molecules = [];
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initMolecules(); }
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initMolecules();
+    }
+
     class Molecule {
       constructor() { this.init(); }
       init() {
-        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.8; this.vy = (Math.random() - 0.5) * 0.8;
-        this.scale = Math.random() * 0.5 + 0.5;
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 1.2;
+        this.vy = (Math.random() - 0.5) * 1.2;
         this.angle = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.015;
+        this.scale = Math.random() * 0.4 + 0.6;
+        this.structure = [
+          { x: 0, y: 0, r: 8, color: 'rgba(255, 255, 255, 0.3)' },
+          { x: 30, y: 0, r: 6, color: 'rgba(255, 255, 255, 0.15)' },
+          { x: -20, y: 25, r: 6, color: 'rgba(255, 255, 255, 0.15)' },
+          { x: -20, y: -25, r: 6, color: 'rgba(255, 255, 255, 0.15)' }
+        ];
+        this.bonds = [[0, 1], [0, 2], [0, 3]];
       }
       draw() {
-        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
-        ctx.beginPath(); ctx.arc(0,0, 6, 0, Math.PI*2); ctx.fillStyle = 'rgba(16, 185, 129, 0.15)'; ctx.fill();
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.scale(this.scale, this.scale);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 2;
+        this.bonds.forEach(bond => {
+          ctx.beginPath();
+          ctx.moveTo(this.structure[bond[0]].x, this.structure[bond[0]].y);
+          ctx.lineTo(this.structure[bond[1]].x, this.structure[bond[1]].y);
+          ctx.stroke();
+        });
+        this.structure.forEach(atom => {
+          ctx.beginPath();
+          ctx.arc(atom.x, atom.y, atom.r, 0, Math.PI * 2);
+          ctx.fillStyle = atom.color;
+          ctx.fill();
+        });
         ctx.restore();
       }
       update() {
-        this.x += this.vx; this.y += this.vy;
-        if(this.x<0||this.x>canvas.width) this.vx*=-1;
-        if(this.y<0||this.y>canvas.height) this.vy*=-1;
+        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+        const pad = 100;
+        if (this.x > canvas.width + pad) this.x = -pad;
+        else if (this.x < -pad) this.x = canvas.width + pad;
+        if (this.y > canvas.height + pad) this.y = -pad;
+        else if (this.y < -pad) this.y = canvas.height + pad;
       }
     }
-    function initMolecules() { molecules = []; for(let i=0; i<30; i++) molecules.push(new Molecule()); }
-    function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=>{m.update();m.draw();}); requestAnimationFrame(animate); }
-    window.addEventListener('resize', resize); resize(); animate();
+
+    function initMolecules() {
+      molecules = [];
+      const density = window.innerWidth < 640 ? 60000 : 45000;
+      const count = Math.floor((canvas.width * canvas.height) / density); 
+      for (let i = 0; i < count; i++) molecules.push(new Molecule());
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      molecules.forEach(m => { m.update(); m.draw(); });
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    resize(); animate();
 
     // Supabase Logic
     document.addEventListener("DOMContentLoaded", () => {
