@@ -9,9 +9,21 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: #1e293b; min-height: 100vh; }
+    
+    /* BACKGROUND CANVAS */
+    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+
+    /* GLASS NAVIGATION */
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .glass-card { 
-      background: white; 
+      background: rgba(255, 255, 255, 0.9); /* Kept white for chart readability */
       border: 1px solid #e2e8f0; 
       border-radius: 2rem; 
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
@@ -19,30 +31,41 @@
     }
     .glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
     .emerald-gradient { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+    
+    .nav-link { color: rgba(255,255,255,0.6); font-weight: 700; font-size: 0.875rem; transition: 0.3s; }
+    .nav-link:hover { color: white; }
+    .nav-active { color: #10b981; border-bottom: 2px solid #10b981; }
   </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-  <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
+  <canvas id="bg-canvas"></canvas>
+
+  <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 emerald-gradient rounded-xl flex items-center justify-center shadow-lg">
           <svg class="text-white w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         </div>
-        <h1 class="font-extrabold text-xl tracking-tight">Clinical Insights</h1>
+        <h1 class="font-extrabold text-xl tracking-tight text-white">Clinical Insights</h1>
       </div>
-      <a href="dashboard.html" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition">Dashboard</a>
+      
+      <div class="hidden md:flex items-center gap-8">
+        <a href="home.html" class="nav-link">Home</a>
+        <a href="dashboard.html" class="nav-link">Records</a>
+        <a href="reports.html" class="nav-link nav-active pb-1">Reports</a>
+      </div>
+
+      <button onclick="logout()" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-red-500/20 transition">Logout</button>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-10">
-    
-    <div id="loadingState" class="text-center py-20 text-slate-400 font-bold animate-pulse">
+    <div id="loadingState" class="text-center py-20 text-emerald-400 font-bold animate-pulse">
         Analyzing clinical database...
     </div>
 
     <div id="reportContent" class="hidden space-y-8">
-        
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="emerald-gradient p-8 rounded-[2rem] text-white shadow-xl">
             <p class="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">Total Revenue</p>
@@ -63,12 +86,10 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           <div class="lg:col-span-2 glass-card p-8">
             <h3 class="font-black text-slate-800 mb-8 uppercase text-xs tracking-widest">Patient Age Demographics</h3>
             <canvas id="ageChart" style="max-height: 350px;"></canvas>
           </div>
-
           <div class="space-y-8">
             <div class="glass-card p-8">
               <h3 class="font-black text-slate-800 mb-6 uppercase text-xs tracking-widest text-center">Gender Ratio</h3>
@@ -79,12 +100,46 @@
               <canvas id="paymentChart"></canvas>
             </div>
           </div>
-
         </div>
     </div>
   </main>
 
   <script>
+    // --- MOLECULE BACKGROUND ---
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let molecules = [];
+    class Molecule {
+      constructor() { this.init(); }
+      init() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.7; this.vy = (Math.random() - 0.5) * 0.7;
+        this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.01;
+        this.scale = Math.random() * 0.5 + 0.5;
+        this.structure = [{x:0,y:0,r:6,c:'rgba(255,255,255,0.15)'},{x:25,y:0,r:4,c:'rgba(255,255,255,0.1)'},{x:-15,y:20,r:4,c:'rgba(255,255,255,0.1)'}];
+        this.bonds = [[0,1],[0,2]];
+      }
+      draw() {
+        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y); ctx.stroke(); });
+        this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI*2); ctx.fillStyle = a.c; ctx.fill(); });
+        ctx.restore();
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+        if(this.x > canvas.width+100) this.x = -100; else if(this.x < -100) this.x = canvas.width+100;
+        if(this.y > canvas.height+100) this.y = -100; else if(this.y < -100) this.y = canvas.height+100;
+      }
+    }
+    function initBG() { 
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      molecules = []; for(let i=0; i<20; i++) molecules.push(new Molecule());
+    }
+    function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=>{m.update(); m.draw();}); requestAnimationFrame(animate); }
+    window.addEventListener('resize', initBG); initBG(); animate();
+
+    // --- SUPABASE & REPORTS LOGIC ---
     {
       const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
       const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
@@ -103,7 +158,6 @@
             return;
           }
 
-          // 1. Calculations
           const totalRev = data.reduce((sum, r) => sum + (r.amount || 0), 0);
           const census = data.length;
           const maxBill = Math.max(...data.map(r => r.amount || 0));
@@ -113,7 +167,6 @@
           document.getElementById('avgRevenue').innerText = `₱${(totalRev / census).toLocaleString(undefined, {maximumFractionDigits:0})}`;
           document.getElementById('maxBill').innerText = `₱${maxBill.toLocaleString()}`;
 
-          // 2. Data Grouping
           const genderCounts = { Male: 0, Female: 0, Other: 0 };
           const payRev = { HMO: 0, Cash: 0, Company: 0 };
           const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
@@ -129,11 +182,9 @@
             else ageBrackets['65+']++;
           });
 
-          // Show Content
           document.getElementById('loadingState').classList.add('hidden');
           document.getElementById('reportContent').classList.remove('hidden');
 
-          // 3. Render Charts
           new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
             data: {
@@ -166,6 +217,11 @@
         }
       }
       loadReports();
+
+      window.logout = async () => {
+        await supabase.auth.signOut();
+        window.location.href = "index.html";
+      };
     }
   </script>
 </body>
