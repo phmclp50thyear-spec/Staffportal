@@ -3,215 +3,161 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Staff Portal | Home Gallery</title>
-
+  <title>Staff Portal | Home</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    :root { 
-      --corp-green: #007941; 
-      --corp-light: #10b981; 
+    :root {
+      --corp-green: #007941;
+      --corp-light: #10b981;
     }
-    
+
     body {
-      margin: 0; padding: 0; overflow: hidden;
-      background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
+      background: #f8fafc;
       font-family: ui-sans-serif, system-ui;
-      height: 100vh;
-      color: white;
-    }
-
-    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
-
-    /* --- NAVIGATION --- */
-    .glass-nav {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      height: 80px;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 2rem;
-    }
-
-    /* --- FULL VISIBILITY CAROUSEL --- */
-    .carousel-wrapper {
-      height: calc(100vh - 80px); /* Fill remaining screen */
-      display: flex; align-items: center; justify-content: center;
-      padding: 2rem;
+      overflow-x: hidden;
     }
 
     .carousel-container {
-      position: relative;
-      width: 100%;
-      max-width: 1100px;
-      height: 100%;
-      max-height: 600px;
-      border-radius: 2rem;
-      overflow: hidden;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 40px 100px rgba(0,0,0,0.6);
-    }
-
-    .carousel-track {
       display: flex;
-      height: 100%;
-      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      width: 200%; /* Two main sections: Records and Reports */
     }
 
     .carousel-slide {
-      min-width: 100%;
-      height: 100%;
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-      background-size: cover;
-      background-position: center;
+      width: 100%;
+      flex-shrink: 0;
+      padding: 20px;
     }
 
-    /* This ensures the whole image is visible without cropping */
-    .carousel-slide img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain; /* Shows full image */
-      z-index: 2;
-      position: relative;
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
 
-    /* Blurred background for aesthetic filling */
-    .slide-bg-blur {
-      position: absolute; inset: 0;
-      background-size: cover;
-      background-position: center;
-      filter: blur(30px) brightness(0.4);
-      opacity: 0.6;
-      z-index: 1;
+    .card-zoom:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 121, 65, 0.1);
     }
 
-    .slide-overlay {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.8));
-      padding: 2rem; z-index: 3;
+    .nav-indicator {
+      transition: all 0.3s ease;
+      height: 3px;
+      background: var(--corp-green);
+      position: absolute;
+      bottom: -1px;
     }
-
-    /* --- SCANNER EFFECT --- */
-    .scanner-line {
-      position: absolute; top: 0; left: 0;
-      width: 100%; height: 2px;
-      background: var(--corp-light);
-      box-shadow: 0 0 15px var(--corp-light);
-      z-index: 10;
-      animation: scanVertical 5s linear infinite;
-      opacity: 0.5;
-    }
-
-    @keyframes scanVertical {
-      0% { top: 0%; } 100% { top: 100%; }
-    }
-
-    .nav-btn-active { color: var(--corp-light); border-bottom: 2px solid var(--corp-light); }
   </style>
 </head>
-<body>
+<body class="bg-slate-50">
 
-  <canvas id="bg-canvas"></canvas>
+  <nav class="glass-nav sticky top-0 z-50 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10" />
+        <div>
+          <h1 class="font-black text-gray-900 leading-none uppercase text-sm tracking-tighter">Medical Central</h1>
+          <p class="text-[9px] text-emerald-600 font-bold tracking-widest uppercase">Admin Dashboard</p>
+        </div>
+      </div>
+      
+      <div class="hidden md:flex gap-8 relative">
+        <button onclick="window.location.href='home.html'" class="text-xs font-bold uppercase tracking-widest text-emerald-700">Home</button>
+        <button onclick="window.location.href='dashboard.html'" class="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-emerald-700 transition">Records</button>
+        <button onclick="window.location.href='reports.html'" class="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-emerald-700 transition">Reports</button>
+      </div>
 
-  <nav class="glass-nav">
-    <div class="flex items-center gap-4">
-      <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10 w-auto brightness-125" />
-      <span class="font-bold text-white tracking-widest uppercase text-xs hidden md:block">Staff Portal</span>
+      <button id="logoutBtn" class="bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition border border-gray-200">
+        Sign Out
+      </button>
     </div>
-    <div class="flex gap-8">
-      <a href="home.html" class="text-sm font-bold nav-btn-active pb-1">Home</a>
-      <a href="dashboard.html" class="text-sm font-bold text-gray-400 hover:text-white transition-colors">Records</a>
-      <a href="reports.html" class="text-sm font-bold text-gray-400 hover:text-white transition-colors">Reports</a>
-    </div>
-    <button onclick="logout()" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500/20 transition">Logout</button>
   </nav>
 
-  <div class="carousel-wrapper">
-    <div class="carousel-container group">
-      <div class="scanner-line"></div>
-      <div class="carousel-track" id="carouselTrack">
-        </div>
+  <header class="max-w-7xl mx-auto px-6 pt-12 pb-6">
+    <h2 class="text-4xl font-black text-gray-900 tracking-tight">System Terminal</h2>
+    <p class="text-gray-500 mt-2 font-medium">Welcome back, <span id="userEmail" class="text-emerald-600">Staff Member</span></p>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       
-      <button onclick="moveSlide(-1)" class="absolute left-5 top-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full z-20 hover:bg-emerald-500/50 transition-all opacity-0 group-hover:opacity-100">
-        <svg width="20" height="20" stroke="white" stroke-width="3" fill="none" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      <button onclick="moveSlide(1)" class="absolute right-5 top-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full z-20 hover:bg-emerald-500/50 transition-all opacity-0 group-hover:opacity-100">
-        <svg width="20" height="20" stroke="white" stroke-width="3" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
+      <div onclick="window.location.href='dashboard.html'" class="group cursor-pointer">
+        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm card-zoom transition-all duration-500 relative overflow-hidden h-80 flex flex-col justify-between">
+          <div class="absolute -right-10 -top-10 bg-emerald-50 w-40 h-40 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+          
+          <div class="relative">
+            <div class="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900">Patient Records</h3>
+            <p class="text-gray-500 mt-2 text-sm leading-relaxed max-w-xs">Access clinical data, update patient history, and manage medical transactions securely.</p>
+          </div>
+          
+          <div class="relative flex items-center text-emerald-600 font-bold text-xs uppercase tracking-widest">
+            Enter Module 
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 group-hover:translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div onclick="window.location.href='reports.html'" class="group cursor-pointer">
+        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm card-zoom transition-all duration-500 relative overflow-hidden h-80 flex flex-col justify-between">
+          <div class="absolute -right-10 -top-10 bg-blue-50 w-40 h-40 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+          
+          <div class="relative">
+            <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900">Clinical Insights</h3>
+            <p class="text-gray-500 mt-2 text-sm leading-relaxed max-w-xs">Review analytics, monthly revenue trends, and departmental performance reports.</p>
+          </div>
+          
+          <div class="relative flex items-center text-blue-600 font-bold text-xs uppercase tracking-widest">
+            View Analytics
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 group-hover:translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
     </div>
-  </div>
+  </main>
+
+  <footer class="mt-20 py-10 text-center">
+    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.4em]">Authorized Access Only • Medical Central © 2024</p>
+  </footer>
 
   <script>
-    const images = [
-      "https://i.imgur.com/ZQEFR8A.jpeg", "https://i.imgur.com/AnolGwk.png", "https://i.imgur.com/ulEsYqJ.jpeg",
-      "https://i.imgur.com/gcpa0h5.jpeg", "https://i.imgur.com/QyhSLel.jpeg", "https://i.imgur.com/b3WI1PI.jpeg",
-      "https://i.imgur.com/0VGmsYF.jpeg", "https://i.imgur.com/jQ8mRfV.jpeg", "https://i.imgur.com/C53Uskn.jpeg",
-      "https://i.imgur.com/48gJAM5.jpeg", "https://i.imgur.com/fowtVc2.jpeg", "https://i.imgur.com/9hZWDtL.jpeg",
-      "https://i.imgur.com/QlssRn4.jpeg", "https://i.imgur.com/kKfoQAo.jpeg", "https://i.imgur.com/vztjwUq.jpeg",
-      "https://i.imgur.com/XAEpSgA.jpeg", "https://i.imgur.com/d5CDOQR.jpeg", "https://i.imgur.com/Vhk6wyX.jpeg",
-      "https://i.imgur.com/Kkj3w4y.jpeg", "https://i.imgur.com/tGBHQJM.jpeg"
-    ];
+    // INITIALIZE SUPABASE
+    const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
+    const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
+    const supabase = window.supabase.createClient(_URL, _KEY);
 
-    const track = document.getElementById('carouselTrack');
-    images.forEach((url, i) => {
-      const slide = document.createElement('div');
-      slide.className = 'carousel-slide';
-      slide.innerHTML = `
-        <div class="slide-bg-blur" style="background-image: url('${url}')"></div>
-        <img src="${url}" alt="Medical Record ${i+1}">
-        <div class="slide-overlay">
-          <span class="text-emerald-400 font-bold text-[10px] uppercase tracking-widest">Medical Imaging Asset 0${i+1}</span>
-        </div>
-      `;
-      track.appendChild(slide);
-    });
-
-    let index = 0;
-    function moveSlide(step) {
-      index = (index + step + images.length) % images.length;
-      track.style.transform = `translateX(-${index * 100}%)`;
-    }
-    setInterval(() => moveSlide(1), 5000);
-
-    // --- MOLECULE BACKGROUND ---
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let molecules = [];
-    class Molecule {
-      constructor() { this.init(); }
-      init() {
-        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.7; this.vy = (Math.random() - 0.5) * 0.7;
-        this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.01;
-        this.scale = Math.random() * 0.5 + 0.5;
-        this.structure = [{x:0,y:0,r:6,c:'rgba(255,255,255,0.15)'},{x:25,y:0,r:4,c:'rgba(255,255,255,0.1)'},{x:-15,y:20,r:4,c:'rgba(255,255,255,0.1)'}];
-        this.bonds = [[0,1],[0,2]];
-      }
-      draw() {
-        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
-        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-        this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y); ctx.stroke(); });
-        this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI*2); ctx.fillStyle = a.c; ctx.fill(); });
-        ctx.restore();
-      }
-      update() {
-        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
-        if(this.x > canvas.width+100) this.x = -100; else if(this.x < -100) this.x = canvas.width+100;
-        if(this.y > canvas.height+100) this.y = -100; else if(this.y < -100) this.y = canvas.height+100;
+    // CHECK AUTH STATUS
+    async function checkUser() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.replace("index.html");
+      } else {
+        document.getElementById('userEmail').innerText = session.user.email;
       }
     }
-    function init() { 
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      molecules = []; for(let i=0; i<25; i++) molecules.push(new Molecule());
-    }
-    function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=>{m.update(); m.draw();}); requestAnimationFrame(animate); }
-    window.addEventListener('resize', init); init(); animate();
 
-    function logout() { window.location.href = "index.html"; }
+    // LOGOUT LOGIC
+    document.getElementById('logoutBtn').onclick = async () => {
+      await supabase.auth.signOut();
+      window.location.replace("index.html");
+    };
+
+    checkUser();
   </script>
 </body>
 </html>
