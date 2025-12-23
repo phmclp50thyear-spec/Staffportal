@@ -9,135 +9,150 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    :root { 
-      --corp-green: #007941; 
-      --corp-light: #10b981; 
-      --glass-bg: rgba(255, 255, 255, 0.05);
-    }
+    :root { --corp-green: #007941; --corp-light: #009954; }
     
-    /* --- BACKGROUND & GLOBAL --- */
-    body {
-      margin: 0; padding: 0;
-      background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
-      min-height: 100vh;
-      color: white;
-    }
-    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
-
-    /* --- GLASS NAVIGATION --- */
-    nav.glass-nav {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* --- CAROUSEL STYLING --- */
-    .carousel-container {
-      position: relative;
-      width: 100%;
-      height: 450px;
-      margin: 20px auto;
-      border-radius: 2rem;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.2);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-    .carousel-track { display: flex; transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1); height: 100%; }
-    .carousel-slide { min-width: 100%; height: 100%; position: relative; }
-    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); transition: transform 2s ease; }
-    .carousel-slide:hover img { transform: scale(1.08); }
-    .slide-overlay {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.9));
-      padding: 30px;
-    }
-
-    /* --- UI COMPONENTS --- */
-    .view-section { display: none; animation: fadeIn 0.5s ease forwards; }
-    .view-active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
     .fab-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; align-items: flex-end; z-index: 40; }
-    .fab-main { width: 60px; height: 60px; background: var(--corp-green); border-radius: 30px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: 0.3s; cursor: pointer; }
-    .fab-main:hover { transform: scale(1.1) rotate(90deg); background: var(--corp-light); }
-    
-    #entryModal, #successOverlay { display: none; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); z-index: 100; position: fixed; inset: 0; align-items: center; justify-content: center; }
-    
-    .glass-card-ui { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-    
-    /* Keep your existing checkmark animations here... */
+    .fab-main { width: 60px; height: 60px; background: var(--corp-green); border-radius: 30px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 10px 25px rgba(0, 121, 65, 0.3); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+    .fab-main:hover { transform: scale(1.1); background: var(--corp-light); }
+    .fab-label { background: white; padding: 8px 16px; border-radius: 12px; margin-right: 15px; font-weight: bold; font-size: 12px; color: var(--corp-green); box-shadow: 0 4px 12px rgba(0,0,0,0.1); opacity: 0; transform: translateX(20px); transition: all 0.3s ease; pointer-events: none; }
+    .fab-container:hover .fab-label { opacity: 1; transform: translateX(0); }
+
+    #entryModal, #successOverlay { display: none; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 100; position: fixed; inset: 0; align-items: center; justify-content: center; }
+    .view-section { display: none; }
+    .view-active { display: block; }
+
+    /* Success Checkmark Animation */
+    .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #fff; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+    .checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 2; stroke: #fff; stroke-miterlimit: 10; box-shadow: inset 0px 0px 0px var(--corp-green); animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
+    .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }
+    @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+    @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+    @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 80px var(--corp-green); } }
+
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
   </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen">
 
-  <canvas id="bg-canvas"></canvas>
-
-  <nav class="glass-nav sticky top-0 z-30">
+  <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
       <div class="flex items-center gap-4">
-        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10 w-auto brightness-125" />
+        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10 w-auto" />
         <div class="hidden md:block">
-          <span class="block font-extrabold text-white leading-none">Staff Portal</span>
-          <span class="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Secure Dashboard</span>
+          <span class="block font-extrabold text-gray-900 leading-none">Staff Portal</span>
+          <span class="text-[10px] text-gray-400 uppercase tracking-tighter font-bold">Medical Access Point</span>
         </div>
       </div>
       <div class="hidden md:flex items-center gap-8">
-        <button onclick="switchView('home')" id="nav-home" class="text-sm font-bold text-emerald-400 border-b-2 border-emerald-400 pb-1 nav-link">Home</button>
-        <button onclick="switchView('records')" id="nav-records" class="text-sm font-bold text-gray-400 hover:text-white transition-colors nav-link">Records</button>
-        <button onclick="switchView('reports')" id="nav-reports" class="text-sm font-bold text-gray-400 hover:text-white transition-colors nav-link">Reports</button>
+        <button onclick="switchView('home')" id="nav-home" class="text-sm font-bold text-[#007941] border-b-2 border-[#007941] pb-1 nav-link">Home</button>
+        <button onclick="switchView('records')" id="nav-records" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors nav-link">Records</button>
+        <button onclick="switchView('reports')" id="nav-reports" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors nav-link">Reports</button>
       </div>
-      <button id="logoutBtn" class="px-5 py-2.5 rounded-xl bg-white/5 text-white font-bold text-xs uppercase tracking-widest hover:bg-red-500/20 border border-white/10 transition">Logout</button>
+      <button id="logoutBtn" class="px-5 py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold text-xs uppercase tracking-widest hover:bg-red-50 hover:text-red-600 border border-gray-200 transition">Logout</button>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6">
     <section id="view-home" class="view-section view-active">
-      <div class="flex justify-between items-end mb-6">
-        <div>
-            <h1 class="text-3xl font-black text-white tracking-tight">Clinical Overview</h1>
-            <p class="text-emerald-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1">Active Facility Imaging</p>
+      <div class="mb-8"><h1 class="text-3xl font-black text-gray-900 tracking-tight">Dashboard Home</h1></div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8">
+          <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Active Staff</h3>
+          <div id="userInfo" class="text-sm text-gray-700 font-bold bg-gray-50 p-4 rounded-2xl">Loading...</div>
         </div>
-        <div class="glass-card-ui px-4 py-2 rounded-xl border border-white/10">
-            <span class="text-[9px] text-gray-400 uppercase font-bold block">Authenticated As</span>
-            <span id="userInfo" class="text-xs text-emerald-400 font-bold">Loading...</span>
-        </div>
-      </div>
-
-      <div class="carousel-container group">
-        <div class="carousel-track" id="carouselTrack"></div>
-        <button onclick="moveSlide(-1)" class="absolute left-5 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-emerald-500/50 p-3 rounded-full backdrop-blur-md z-10 transition-all opacity-0 group-hover:opacity-100">
-            <svg width="20" height="20" stroke="white" stroke-width="3" fill="none" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <button onclick="moveSlide(1)" class="absolute right-5 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-emerald-500/50 p-3 rounded-full backdrop-blur-md z-10 transition-all opacity-0 group-hover:opacity-100">
-            <svg width="20" height="20" stroke="white" stroke-width="3" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
       </div>
     </section>
 
     <section id="view-records" class="view-section">
-      <div class="mb-8"><h1 class="text-3xl font-black text-white tracking-tight">Patient Records</h1></div>
-      <div class="glass-card-ui rounded-[2rem] overflow-hidden">
+      <div class="mb-8"><h1 class="text-3xl font-black text-gray-900 tracking-tight">Patient Records</h1></div>
+      <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse min-w-[1000px]">
             <thead>
-              <tr class="bg-white/5 border-b border-white/10">
-                <th class="px-6 py-5 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Date</th>
-                <th class="px-6 py-5 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Patient & Type</th>
-                <th class="px-6 py-5 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Procedures</th>
-                <th class="px-6 py-5 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Doctor & Guarantor</th>
-                <th class="px-6 py-5 text-[10px] font-bold text-emerald-500 uppercase tracking-widest text-right">Amount</th>
+              <tr class="bg-gray-50/50 border-b border-gray-100">
+                <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
+                <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient & Type</th>
+                <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Procedures</th>
+                <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Doctor & Guarantor</th>
+                <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Amount</th>
               </tr>
             </thead>
-            <tbody id="recordsTableBody" class="divide-y divide-white/5 text-gray-300"></tbody>
+            <tbody id="recordsTableBody" class="divide-y divide-gray-50"></tbody>
           </table>
         </div>
       </div>
     </section>
   </main>
+
+  <div id="successOverlay">
+    <div class="text-center">
+      <svg class="checkmark mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+      </svg>
+      <p class="text-white font-black uppercase tracking-widest mt-6 text-sm">Record Saved Successfully</p>
+    </div>
+  </div>
+
+  <div id="entryModal">
+    <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-8 md:p-10 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-black text-gray-900 tracking-tight">New Transaction</h2>
+        <button onclick="toggleModal(false)" class="text-gray-400 font-bold">✕</button>
+      </div>
+
+      <form id="transactionForm" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Patient Name</label>
+            <input type="text" id="f-patient" placeholder="Full Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Age</label>
+            <input type="number" id="f-age" placeholder="0" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Gender</label>
+            <select id="f-gender" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Date</label>
+            <input type="datetime-local" id="f-date" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Payment Type</label>
+            <select id="f-payment" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+              <option>HMO</option><option>Cash</option><option>Company</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Package/Procedure</label>
+          <div id="procedureContainer" class="space-y-2">
+            <div class="flex gap-2">
+              <input type="text" placeholder="Entry 1" required class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+              <button type="button" onclick="addProcedureRow()" class="px-4 bg-green-50 text-[#007941] rounded-2xl font-bold">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="text" id="f-doctor" placeholder="Doctor's Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+          <input type="number" step="0.01" id="f-amount" placeholder="Amount (₱)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+        </div>
+        
+        <input type="text" id="f-guarantor" placeholder="Guarantor (Optional)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+
+        <button type="submit" id="saveBtn" class="w-full py-4 bg-[#007941] text-white font-bold rounded-2xl uppercase tracking-widest text-sm shadow-lg hover:bg-[#005e32] transition-all">Save Record</button>
+      </form>
+    </div>
+  </div>
 
   <div class="fab-container"><div class="flex items-center"><span class="fab-label uppercase tracking-widest">Add Record</span><div class="fab-main" onclick="toggleModal(true)"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></div></div></div>
 
@@ -145,73 +160,108 @@
     (function() {
       const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
 
-      // --- CAROUSEL LOGIC ---
-      const images = [
-          "https://i.imgur.com/ZQEFR8A.jpeg", "https://i.imgur.com/AnolGwk.png", "https://i.imgur.com/ulEsYqJ.jpeg",
-          "https://i.imgur.com/gcpa0h5.jpeg", "https://i.imgur.com/QyhSLel.jpeg", "https://i.imgur.com/b3WI1PI.jpeg",
-          "https://i.imgur.com/0VGmsYF.jpeg", "https://i.imgur.com/jQ8mRfV.jpeg", "https://i.imgur.com/C53Uskn.jpeg",
-          "https://i.imgur.com/48gJAM5.jpeg", "https://i.imgur.com/fowtVc2.jpeg", "https://i.imgur.com/9hZWDtL.jpeg",
-          "https://i.imgur.com/QlssRn4.jpeg", "https://i.imgur.com/kKfoQAo.jpeg", "https://i.imgur.com/vztjwUq.jpeg",
-          "https://i.imgur.com/XAEpSgA.jpeg", "https://i.imgur.com/d5CDOQR.jpeg", "https://i.imgur.com/Vhk6wyX.jpeg",
-          "https://i.imgur.com/Kkj3w4y.jpeg", "https://i.imgur.com/tGBHQJM.jpeg"
-      ];
-      const track = document.getElementById('carouselTrack');
-      images.forEach((url, i) => {
-        const slide = document.createElement('div');
-        slide.className = 'carousel-slide';
-        slide.innerHTML = `<img src="${url}"><div class="slide-overlay"><p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Archive Ref: 00${i+1}</p></div>`;
-        track.appendChild(slide);
-      });
-
-      let currentIdx = 0;
-      window.moveSlide = (dir) => {
-        currentIdx = (currentIdx + dir + images.length) % images.length;
-        track.style.transform = `translateX(-${currentIdx * 100}%)`;
-      };
-      setInterval(() => moveSlide(1), 6000);
-
-      // --- MOLECULE ANIMATION ---
-      const canvas = document.getElementById('bg-canvas');
-      const ctx = canvas.getContext('2d');
-      let molecules = [];
-      class Molecule {
-        constructor() { this.init(); }
-        init() {
-          this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-          this.vx = (Math.random() - 0.5) * 1.0; this.vy = (Math.random() - 0.5) * 1.0;
-          this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.01;
-          this.scale = Math.random() * 0.4 + 0.6;
-          this.structure = [{x:0,y:0,r:6,c:'rgba(255,255,255,0.15)'},{x:25,y:0,r:4,c:'rgba(255,255,255,0.08)'},{x:-15,y:20,r:4,c:'rgba(255,255,255,0.08)'}];
-          this.bonds = [[0,1],[0,2]];
-        }
-        draw() {
-          ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
-          ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1.5;
-          this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y); ctx.stroke(); });
-          this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI*2); ctx.fillStyle = a.c; ctx.fill(); });
-          ctx.restore();
-        }
-        update() {
-          this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
-          if(this.x > canvas.width+100) this.x = -100; else if(this.x < -100) this.x = canvas.width+100;
-          if(this.y > canvas.height+100) this.y = -100; else if(this.y < -100) this.y = canvas.height+100;
-        }
-      }
-      function initMolecules() { molecules=[]; for(let i=0; i<20; i++) molecules.push(new Molecule()); }
-      function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=> {m.update(); m.draw();}); requestAnimationFrame(animate); }
-      window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initMolecules(); });
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight; initMolecules(); animate();
-
-      // --- SUPABASE & NAVIGATION LOGIC ---
       supabase.auth.onAuthStateChange((event, session) => {
         if (!session) window.location.replace("index.html");
         else document.getElementById('userInfo').innerText = session.user.email;
       });
 
-      // [Keep all your existing fetchRecords, toggleModal, switchView, and Form Submit scripts here]
-      // Just ensure switchView matches the new IDs.
-      
+      async function fetchRecords() {
+        const { data, error } = await supabase.from('patient_records').select('*').order('date', { ascending: false });
+        const tbody = document.getElementById('recordsTableBody');
+        tbody.innerHTML = '';
+        
+        if (data) data.forEach(r => {
+          const procs = r.procedures.map(p => `<span class="inline-block px-2 py-0.5 mr-1 mb-1 bg-green-50 text-[#007941] rounded text-[10px] font-bold border border-green-100">${p}</span>`).join('');
+          const typeColor = r.payment_type === 'Cash' ? 'bg-orange-100 text-orange-700' : r.payment_type === 'HMO' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+
+          tbody.innerHTML += `<tr>
+            <td class="px-6 py-4 text-xs text-gray-500 font-medium">${new Date(r.date).toLocaleDateString()}</td>
+            <td class="px-6 py-4">
+              <div class="font-black text-gray-900">${r.patient_name}</div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[10px] text-gray-400 font-bold uppercase">${r.age}Y • ${r.gender}</span>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${typeColor}">${r.payment_type}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">${procs}</td>
+            <td class="px-6 py-4">
+              <div class="text-xs font-bold text-gray-700">Dr. ${r.doctor_name}</div>
+              <div class="text-[10px] text-gray-400 font-medium mt-0.5 italic">G: ${r.guarantor || 'None'}</div>
+            </td>
+            <td class="px-6 py-4 text-sm font-black text-right text-[#007941]">₱${parseFloat(r.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          </tr>`;
+        });
+      }
+
+      window.switchView = (viewName) => {
+        if (viewName === 'reports') {
+          window.location.href = "reports.html";
+          return;
+        }
+
+        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('view-active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.className = 'text-sm font-bold text-gray-500 hover:text-[#007941] nav-link');
+
+        const targetView = document.getElementById(`view-${viewName}`);
+        const targetNav = document.getElementById(`nav-${viewName}`);
+
+        if (targetView) targetView.classList.add('view-active');
+        if (targetNav) targetNav.className = 'text-sm font-bold text-[#007941] border-b-2 border-[#007941] pb-1 nav-link';
+
+        if(viewName === 'records') fetchRecords();
+      };
+
+      window.toggleModal = (show) => {
+        document.getElementById('entryModal').style.display = show ? 'flex' : 'none';
+        if(show) {
+          const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+          document.getElementById('f-date').value = now.toISOString().slice(0,16);
+        }
+      };
+
+      window.addProcedureRow = () => {
+        const div = document.createElement('div'); div.className = "flex gap-2";
+        div.innerHTML = `<input type="text" placeholder="Entry" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none"><button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-600 rounded-2xl font-bold">×</button>`;
+        document.getElementById('procedureContainer').appendChild(div);
+      };
+
+      document.getElementById('logoutBtn').onclick = async () => { await supabase.auth.signOut(); window.location.replace("index.html"); };
+
+      document.getElementById('transactionForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('saveBtn'); btn.innerText = "Processing..."; btn.disabled = true;
+
+        const procedures = Array.from(document.querySelectorAll('#procedureContainer input')).map(i => i.value).filter(v => v.trim());
+        const { data: { user } } = await supabase.auth.getUser();
+
+        const { error } = await supabase.from('patient_records').insert([{
+          date: document.getElementById('f-date').value,
+          patient_name: document.getElementById('f-patient').value,
+          age: parseInt(document.getElementById('f-age').value),
+          gender: document.getElementById('f-gender').value,
+          procedures,
+          doctor_name: document.getElementById('f-doctor').value,
+          payment_type: document.getElementById('f-payment').value,
+          guarantor: document.getElementById('f-guarantor').value || 'N/A',
+          amount: parseFloat(document.getElementById('f-amount').value),
+          staff_email: user.email
+        }]);
+
+        if (error) { alert(error.message); btn.innerText = "Save Record"; btn.disabled = false; }
+        else {
+          document.getElementById('entryModal').style.display = 'none';
+          const overlay = document.getElementById('successOverlay');
+          overlay.style.display = 'flex';
+          setTimeout(() => { 
+            overlay.style.display = 'none'; 
+            document.getElementById('transactionForm').reset();
+            fetchRecords(); 
+          }, 2000);
+          btn.innerText = "Save Record"; btn.disabled = false;
+        }
+      };
     })();
   </script>
 </body>
 </html>
+
