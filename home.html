@@ -112,35 +112,58 @@
   </div>
 
   <script>
-    const images = [
-      "https://i.imgur.com/ZQEFR8A.jpeg", "https://i.imgur.com/AnolGwk.png", "https://i.imgur.com/ulEsYqJ.jpeg",
-      "https://i.imgur.com/gcpa0h5.jpeg", "https://i.imgur.com/QyhSLel.jpeg", "https://i.imgur.com/b3WI1PI.jpeg",
-      "https://i.imgur.com/0VGmsYF.jpeg", "https://i.imgur.com/jQ8mRfV.jpeg", "https://i.imgur.com/C53Uskn.jpeg",
-      "https://i.imgur.com/48gJAM5.jpeg", "https://i.imgur.com/fowtVc2.jpeg", "https://i.imgur.com/9hZWDtL.jpeg",
-      "https://i.imgur.com/QlssRn4.jpeg", "https://i.imgur.com/kKfoQAo.jpeg", "https://i.imgur.com/vztjwUq.jpeg",
-      "https://i.imgur.com/XAEpSgA.jpeg", "https://i.imgur.com/d5CDOQR.jpeg", "https://i.imgur.com/Vhk6wyX.jpeg",
-      "https://i.imgur.com/Kkj3w4y.jpeg", "https://i.imgur.com/tGBHQJM.jpeg"
-    ];
+  /* ---------------- IMAGE CAROUSEL ---------------- */
+  const images = [
+    "https://i.imgur.com/ZQEFR8A.jpeg","https://i.imgur.com/AnolGwk.png","https://i.imgur.com/ulEsYqJ.jpeg",
+    "https://i.imgur.com/gcpa0h5.jpeg","https://i.imgur.com/QyhSLel.jpeg","https://i.imgur.com/b3WI1PI.jpeg",
+    "https://i.imgur.com/0VGmsYF.jpeg","https://i.imgur.com/jQ8mRfV.jpeg","https://i.imgur.com/C53Uskn.jpeg",
+    "https://i.imgur.com/48gJAM5.jpeg","https://i.imgur.com/fowtVc2.jpeg","https://i.imgur.com/9hZWDtL.jpeg",
+    "https://i.imgur.com/QlssRn4.jpeg","https://i.imgur.com/kKfoQAo.jpeg","https://i.imgur.com/vztjwUq.jpeg",
+    "https://i.imgur.com/XAEpSgA.jpeg","https://i.imgur.com/d5CDOQR.jpeg","https://i.imgur.com/Vhk6wyX.jpeg",
+    "https://i.imgur.com/Kkj3w4y.jpeg","https://i.imgur.com/tGBHQJM.jpeg"
+  ];
 
-    const slider = document.getElementById('imageSlider');
-    images.forEach((src, i) => {
-      const item = document.createElement('div');
-      item.className = 'item';
-      item.style.setProperty('--position', i + 1);
-      item.innerHTML = `<img src="${src}" alt="Gallery Item">`;
-      slider.appendChild(item);
-    });
+  const slider = document.getElementById("imageSlider");
+  slider.style.setProperty("--quantity", images.length);
 
-    // --- SUPABASE & LOGOUT ---
-    const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
-    const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
-    const supabase = window.supabase.createClient(_URL, _KEY);
+  images.forEach((src, i) => {
+    const item = document.createElement("div");
+    item.className = "item";
+    item.style.setProperty("--position", i + 1);
 
-    async function signOutNow() {
-      await supabase.auth.signOut();
-      localStorage.clear();
-      window.location.replace("index.html");
+    const img = document.createElement("img");
+    img.src = src;
+    img.loading = "lazy";
+    img.alt = "Gallery Image";
+
+    item.appendChild(img);
+    slider.appendChild(item);
+  });
+
+  /* ---------------- SUPABASE ---------------- */
+  const SUPABASE_URL = "https://xpdtzvxjlguhcxkgowsg.supabase.co";
+
+  /* ⚠️ MUST BE anon public key (Dashboard → API → anon public) */
+  const SUPABASE_ANON_KEY = "YOUR_ANON_PUBLIC_KEY_HERE";
+
+  const supabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  async function signOutNow() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      alert("Logout failed: " + error.message);
+      return;
     }
-  </script>
+
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  }
+</script>
 </body>
 </html>
+
