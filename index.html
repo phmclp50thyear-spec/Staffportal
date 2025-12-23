@@ -6,7 +6,6 @@
   <title>Staff Portal | Login</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -19,13 +18,14 @@
     body {
       margin: 0;
       padding: 0;
-      overflow: hidden; /* Prevent scrollbars from animation */
+      overflow: hidden; 
       background: radial-gradient(circle at center, var(--corp-light) 0%, var(--corp-green) 40%, var(--corp-dark) 100%);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      perspective: 1000px; /* Required for the 3D translateZ effect */
     }
 
     /* --- MOLECULE CANVAS --- */
@@ -39,12 +39,26 @@
       pointer-events: none;
     }
 
+    /* --- INTEGRATED ANIMATED CARD --- */
     .glass-card {
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
       z-index: 10;
+      
+      /* Animation Properties from your snippet */
+      opacity: 0;
+      transform: translateZ(-300px) scale(0.3);
+      animation: cardProject 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation-delay: 0.2s; /* Slightly faster than your snippet for better UX */
+    }
+
+    @keyframes cardProject {
+      to {
+        opacity: 1;
+        transform: translateZ(0px) scale(1);
+      }
     }
 
     input:focus {
@@ -129,8 +143,8 @@
 <body class="p-4">
   <canvas id="bg-canvas"></canvas>
 
-  <div class="w-full max-w-sm md:max-w-md mx-auto">
-    <div class="glass-card rounded-[2.5rem] p-8 md:p-12 border border-white/40">
+  <div class="w-full max-w-sm md:max-w-md mx-auto flex justify-center">
+    <div class="glass-card rounded-[2.5rem] p-8 md:p-12 border border-white/40 w-full">
 
       <div class="flex justify-center mb-8">
         <img src="https://i.imgur.com/VbZKWAf.png" alt="Corporate Logo" class="h-20 md:h-28 w-auto object-contain" />
@@ -184,109 +198,53 @@
   </div>
 
   <script>
-    // --- MOLECULE ANIMATION ---
+    // Molecule script remains unchanged to keep background stable
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let molecules = [];
-
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initMolecules();
-    }
-
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initMolecules(); }
     class Molecule {
       constructor() { this.init(); }
       init() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 1.2;
-        this.vy = (Math.random() - 0.5) * 1.2;
-        this.angle = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.015;
-        this.scale = Math.random() * 0.4 + 0.6; // Scale of the molecule
-        this.structure = [
-          { x: 0, y: 0, r: 8, color: 'rgba(255, 255, 255, 0.4)' },
-          { x: 30, y: 0, r: 6, color: 'rgba(255, 255, 255, 0.2)' },
-          { x: -20, y: 25, r: 6, color: 'rgba(255, 255, 255, 0.2)' },
-          { x: -20, y: -25, r: 6, color: 'rgba(255, 255, 255, 0.2)' }
-        ];
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 1.2; this.vy = (Math.random() - 0.5) * 1.2;
+        this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.015;
+        this.scale = Math.random() * 0.4 + 0.6;
+        this.structure = [{ x: 0, y: 0, r: 8, color: 'rgba(255, 255, 255, 0.4)' }, { x: 30, y: 0, r: 6, color: 'rgba(255, 255, 255, 0.2)' }, { x: -20, y: 25, r: 6, color: 'rgba(255, 255, 255, 0.2)' }, { x: -20, y: -25, r: 6, color: 'rgba(255, 255, 255, 0.2)' }];
         this.bonds = [[0, 1], [0, 2], [0, 3]];
       }
       draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-        ctx.scale(this.scale, this.scale);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 2;
-        this.bonds.forEach(bond => {
-          const start = this.structure[bond[0]];
-          const end = this.structure[bond[1]];
-          ctx.beginPath();
-          ctx.moveTo(start.x, start.y);
-          ctx.lineTo(end.x, end.y);
-          ctx.stroke();
-        });
-        this.structure.forEach(atom => {
-          ctx.beginPath();
-          ctx.arc(atom.x, atom.y, atom.r, 0, Math.PI * 2);
-          ctx.fillStyle = atom.color;
-          ctx.fill();
-        });
+        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; ctx.lineWidth = 2;
+        this.bonds.forEach(bond => { ctx.beginPath(); ctx.moveTo(this.structure[bond[0]].x, this.structure[bond[0]].y); ctx.lineTo(this.structure[bond[1]].x, this.structure[bond[1]].y); ctx.stroke(); });
+        this.structure.forEach(atom => { ctx.beginPath(); ctx.arc(atom.x, atom.y, atom.r, 0, Math.PI * 2); ctx.fillStyle = atom.color; ctx.fill(); });
         ctx.restore();
       }
       update() {
         this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
         const pad = 100;
-        if (this.x > canvas.width + pad) this.x = -pad;
-        else if (this.x < -pad) this.x = canvas.width + pad;
-        if (this.y > canvas.height + pad) this.y = -pad;
-        else if (this.y < -pad) this.y = canvas.height + pad;
+        if (this.x > canvas.width + pad) this.x = -pad; else if (this.x < -pad) this.x = canvas.width + pad;
+        if (this.y > canvas.height + pad) this.y = -pad; else if (this.y < -pad) this.y = canvas.height + pad;
       }
     }
-
-    function initMolecules() {
-      molecules = [];
-      const count = Math.floor((canvas.width * canvas.height) / 45000); 
-      for (let i = 0; i < count; i++) molecules.push(new Molecule());
-    }
-
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      molecules.forEach(m => { m.update(); m.draw(); });
-      requestAnimationFrame(animate);
-    }
-
+    function initMolecules() { molecules = []; const count = Math.floor((canvas.width * canvas.height) / 45000); for (let i = 0; i < count; i++) molecules.push(new Molecule()); }
+    function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); molecules.forEach(m => { m.update(); m.draw(); }); requestAnimationFrame(animate); }
     window.addEventListener('resize', resize);
-    resize();
-    animate();
+    resize(); animate();
 
-    // --- LOGIN LOGIC ---
+    // Supabase logic remains unchanged
     document.addEventListener("DOMContentLoaded", () => {
-      const supabase = window.supabase.createClient(
-        'https://xpdtzvxjlguhcxkgowsg.supabase.co',
-        'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
-      );
-
+      const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
       const form = document.getElementById('login-form');
       const errorBox = document.getElementById('error');
-
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) window.location.replace("dashboard.html");
-      });
-
+      supabase.auth.getSession().then(({ data }) => { if (data.session) window.location.replace("dashboard.html"); });
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorBox.classList.add('hidden');
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          errorBox.textContent = error.message;
-          errorBox.classList.remove('hidden');
-          return;
-        }
+        if (error) { errorBox.textContent = error.message; errorBox.classList.remove('hidden'); return; }
         window.location.href = "dashboard.html";
       });
     });
