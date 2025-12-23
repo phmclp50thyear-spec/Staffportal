@@ -45,26 +45,16 @@
         </div>
       </div>
       <div class="hidden md:flex items-center gap-8">
-        <button onclick="switchView('home')" id="nav-home" class="text-sm font-bold text-[#007941] border-b-2 border-[#007941] pb-1 nav-link">Home</button>
-        <button onclick="switchView('records')" id="nav-records" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors nav-link">Records</button>
-        <button onclick="switchView('reports')" id="nav-reports" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors nav-link">Reports</button>
+        <button onclick="window.location.href='home.html'" id="nav-home" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors nav-link">Home</button>
+        <button onclick="switchView('records')" id="nav-records" class="text-sm font-bold text-[#007941] border-b-2 border-[#007941] pb-1 nav-link">Records</button>
+        <button onclick="window.location.href='reports.html'" id="nav-reports" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors nav-link">Reports</button>
       </div>
       <button id="logoutBtn" class="px-5 py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold text-xs uppercase tracking-widest hover:bg-red-50 hover:text-red-600 border border-gray-200 transition">Logout</button>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6">
-    <section id="view-home" class="view-section view-active">
-      <div class="mb-8"><h1 class="text-3xl font-black text-gray-900 tracking-tight">Dashboard Home</h1></div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8">
-          <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Active Staff</h3>
-          <div id="userInfo" class="text-sm text-gray-700 font-bold bg-gray-50 p-4 rounded-2xl">Loading...</div>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-records" class="view-section">
+    <section id="view-records" class="view-section view-active">
       <div class="mb-8"><h1 class="text-3xl font-black text-gray-900 tracking-tight">Patient Records</h1></div>
       <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto custom-scrollbar">
@@ -162,7 +152,8 @@
 
       supabase.auth.onAuthStateChange((event, session) => {
         if (!session) window.location.replace("index.html");
-        else document.getElementById('userInfo').innerText = session.user.email;
+        // We trigger fetchRecords immediately if session is active
+        else fetchRecords();
       });
 
       async function fetchRecords() {
@@ -194,11 +185,17 @@
       }
 
       window.switchView = (viewName) => {
+        // Redirection logic for Home and Reports
+        if (viewName === 'home') {
+          window.location.href = "home.html";
+          return;
+        }
         if (viewName === 'reports') {
           window.location.href = "reports.html";
           return;
         }
 
+        // Internal switch for Records (if you add more internal views later)
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('view-active'));
         document.querySelectorAll('.nav-link').forEach(l => l.className = 'text-sm font-bold text-gray-500 hover:text-[#007941] nav-link');
 
@@ -264,4 +261,3 @@
   </script>
 </body>
 </html>
-
