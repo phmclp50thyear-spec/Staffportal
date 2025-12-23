@@ -164,7 +164,6 @@
   </div>
 
   <script>
-    // --- RESTORED ORIGINAL MOLECULE ANIMATION ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let molecules = [];
@@ -240,7 +239,7 @@
     window.addEventListener('resize', resize);
     resize(); animate();
 
-    // Supabase Logic
+    // Redirection point to Home.html
     document.addEventListener("DOMContentLoaded", () => {
       const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
       const form = document.getElementById('login-form');
@@ -253,8 +252,13 @@
           email: document.getElementById('email').value,
           password: document.getElementById('password').value
         });
-        if (error) { errorBox.textContent = error.message; errorBox.classList.remove('hidden'); }
-        else { window.location.href = "dashboard.html"; }
+        if (error) { 
+          errorBox.textContent = error.message; 
+          errorBox.classList.remove('hidden'); 
+        } else { 
+          // REDIRECT TO HOME.HTML
+          window.location.href = "home.html"; 
+        }
       });
     });
   </script>
