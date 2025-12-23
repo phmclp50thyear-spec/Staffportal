@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Portal | Home Gallery</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root { 
+      --corp-green: #007941; 
+      --corp-light: #10b981; 
+    }
+    
+    body {
+      margin: 0; padding: 0; overflow: hidden;
+      background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
+      font-family: ui-sans-serif, system-ui;
+      height: 100vh;
+      color: white;
+    }
+
+    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+
+    /* --- NAVIGATION --- */
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      height: 80px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem;
+    }
+
+    /* --- FULL VISIBILITY CAROUSEL --- */
+    .carousel-wrapper {
+      height: calc(100vh - 80px); /* Fill remaining screen */
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      max-width: 1100px;
+      height: 100%;
+      max-height: 600px;
+      border-radius: 2rem;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    }
+
+    .carousel-track {
+      display: flex;
+      height: 100%;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .carousel-slide {
+      min-width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* This ensures the whole image is visible without cropping */
+    .carousel-slide img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain; /* Shows full image */
+      z-index: 2;
+      position: relative;
+    }
+
+    /* Blurred background for aesthetic filling */
+    .slide-bg-blur {
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(30px) brightness(0.4);
+      opacity: 0.6;
+      z-index: 1;
+    }
+
+    .slide-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      padding: 2rem; z-index: 3;
+    }
+
+    /* --- SCANNER EFFECT --- */
+    .scanner-line {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: var(--corp-light);
+      box-shadow: 0 0 15px var(--corp-light);
+      z-index: 10;
+      animation: scanVertical 5s linear infinite;
+      opacity: 0.5;
+    }
+
+    @keyframes scanVertical {
+      0% { top: 0%; } 100% { top: 100%; }
+    }
+
+    .nav-btn-active { color: var(--corp-light); border-bottom: 2px solid var(--corp-light); }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <nav class="glass-nav">
+    <div class="flex items-center gap-4">
+      <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10 w-auto brightness-125" />
+      <span class="font-bold text-white tracking-widest uppercase text-xs hidden md:block">Staff Portal</span>
+    </div>
+    <div class="flex gap-8">
+      <a href="home.html" class="text-sm font-bold nav-btn-active pb-1">Home</a>
+      <a href="dashboard.html" class="text-sm font-bold text-gray-400 hover:text-white transition-colors">Records</a>
+      <a href="reports.html" class="text-sm font-bold text-gray-400 hover:text-white transition-colors">Reports</a>
+    </div>
+    <button onclick="logout()" class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500/20 transition">Logout</button>
+  </nav>
+
+  <div class="carousel-wrapper">
+    <div class="carousel-container group">
+      <div class="scanner-line"></div>
+      <div class="carousel-track" id="carouselTrack">
+        </div>
+      
+      <button onclick="moveSlide(-1)" class="absolute left-5 top-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full z-20 hover:bg-emerald-500/50 transition-all opacity-0 group-hover:opacity-100">
+        <svg width="20" height="20" stroke="white" stroke-width="3" fill="none" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button onclick="moveSlide(1)" class="absolute right-5 top-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full z-20 hover:bg-emerald-500/50 transition-all opacity-0 group-hover:opacity-100">
+        <svg width="20" height="20" stroke="white" stroke-width="3" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const images = [
+      "https://i.imgur.com/ZQEFR8A.jpeg", "https://i.imgur.com/AnolGwk.png", "https://i.imgur.com/ulEsYqJ.jpeg",
+      "https://i.imgur.com/gcpa0h5.jpeg", "https://i.imgur.com/QyhSLel.jpeg", "https://i.imgur.com/b3WI1PI.jpeg",
+      "https://i.imgur.com/0VGmsYF.jpeg", "https://i.imgur.com/jQ8mRfV.jpeg", "https://i.imgur.com/C53Uskn.jpeg",
+      "https://i.imgur.com/48gJAM5.jpeg", "https://i.imgur.com/fowtVc2.jpeg", "https://i.imgur.com/9hZWDtL.jpeg",
+      "https://i.imgur.com/QlssRn4.jpeg", "https://i.imgur.com/kKfoQAo.jpeg", "https://i.imgur.com/vztjwUq.jpeg",
+      "https://i.imgur.com/XAEpSgA.jpeg", "https://i.imgur.com/d5CDOQR.jpeg", "https://i.imgur.com/Vhk6wyX.jpeg",
+      "https://i.imgur.com/Kkj3w4y.jpeg", "https://i.imgur.com/tGBHQJM.jpeg"
+    ];
+
+    const track = document.getElementById('carouselTrack');
+    images.forEach((url, i) => {
+      const slide = document.createElement('div');
+      slide.className = 'carousel-slide';
+      slide.innerHTML = `
+        <div class="slide-bg-blur" style="background-image: url('${url}')"></div>
+        <img src="${url}" alt="Medical Record ${i+1}">
+        <div class="slide-overlay">
+          <span class="text-emerald-400 font-bold text-[10px] uppercase tracking-widest">Medical Imaging Asset 0${i+1}</span>
+        </div>
+      `;
+      track.appendChild(slide);
+    });
+
+    let index = 0;
+    function moveSlide(step) {
+      index = (index + step + images.length) % images.length;
+      track.style.transform = `translateX(-${index * 100}%)`;
+    }
+    setInterval(() => moveSlide(1), 5000);
+
+    // --- MOLECULE BACKGROUND ---
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let molecules = [];
+    class Molecule {
+      constructor() { this.init(); }
+      init() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.7; this.vy = (Math.random() - 0.5) * 0.7;
+        this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.01;
+        this.scale = Math.random() * 0.5 + 0.5;
+        this.structure = [{x:0,y:0,r:6,c:'rgba(255,255,255,0.15)'},{x:25,y:0,r:4,c:'rgba(255,255,255,0.1)'},{x:-15,y:20,r:4,c:'rgba(255,255,255,0.1)'}];
+        this.bonds = [[0,1],[0,2]];
+      }
+      draw() {
+        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y); ctx.stroke(); });
+        this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI*2); ctx.fillStyle = a.c; ctx.fill(); });
+        ctx.restore();
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+        if(this.x > canvas.width+100) this.x = -100; else if(this.x < -100) this.x = canvas.width+100;
+        if(this.y > canvas.height+100) this.y = -100; else if(this.y < -100) this.y = canvas.height+100;
+      }
+    }
+    function init() { 
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      molecules = []; for(let i=0; i<25; i++) molecules.push(new Molecule());
+    }
+    function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=>{m.update(); m.draw();}); requestAnimationFrame(animate); }
+    window.addEventListener('resize', init); init(); animate();
+
+    function logout() { window.location.href = "index.html"; }
+  </script>
+</body>
+</html>
