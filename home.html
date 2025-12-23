@@ -33,8 +33,8 @@
 
     .slider {
       position: relative;
-      width: 300px;
-      height: 200px;
+      width: 220px;
+      height: 320px;
       transform-style: preserve-3d;
       animation: spin 60s linear infinite;
     }
@@ -49,19 +49,20 @@
       inset: 0;
     }
 
+    /* PORTRAIT IMAGE CARD */
     .item img {
-      width: 260px;
-      height: 160px;
+      width: 200px;
+      height: 300px;
       object-fit: cover;
       background: #fff;
-      border-radius: 14px;
+      border-radius: 18px;
       border: 2px solid var(--corp-light);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.3);
       cursor: pointer;
       transition: transform 0.3s ease;
     }
 
-    /* Pause spin on hover */
+    /* Pause rotation on hover */
     .banner:hover .slider {
       animation-play-state: paused;
     }
@@ -158,7 +159,7 @@
   ];
 
   const slider = document.getElementById("imageSlider");
-  const radius = 420;
+  const radius = 460;
   const total = images.length;
 
   const modal = document.getElementById("imageModal");
@@ -185,11 +186,7 @@
   });
 
   closeModal.onclick = () => modal.classList.add("hidden");
-
-  modal.onclick = (e) => {
-    if (e.target === modal) modal.classList.add("hidden");
-  };
-
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.add("hidden"); };
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") modal.classList.add("hidden");
   });
