@@ -4,96 +4,115 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Staff Portal | Home</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
+    :root {
+      --corp-green: #007941;
+      --corp-light: #10b981;
+    }
+
     body {
-      margin: 0; padding: 0;
+      margin: 0; padding: 0; overflow: hidden;
       background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
       font-family: ui-sans-serif, system-ui;
-      min-height: 100vh;
-      overflow-x: hidden;
+      height: 100vh;
     }
 
-    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
-
-    /* --- SMOOTH INFINITE SLIDER --- */
-    .slider-track {
+    /* --- 3D TURNING CAROUSEL --- */
+    .banner {
+      width: 100%;
+      height: 60vh;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
       display: flex;
-      width: calc(250px * 40); /* Doubled for infinite effect */
-      animation: scroll 60s linear infinite;
+      align-items: center;
+      justify-content: center;
+      perspective: 1500px;
     }
 
-    .slider-track:hover { animation-play-state: paused; }
-
-    @keyframes scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(calc(-250px * 20)); }
+    .slider {
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      transform-style: preserve-3d;
+      animation: rotateGallery 30s linear infinite;
     }
 
-    .slide-item {
-      width: 200px;
-      height: 200px;
-      margin: 0 25px;
-      flex-shrink: 0;
+    @keyframes rotateGallery {
+      from { transform: rotateY(0deg); }
+      to { transform: rotateY(360deg); }
     }
 
-    .slide-item img {
+    .item {
+      position: absolute;
+      inset: 0;
+      transform: rotateY(calc((var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(400px);
+    }
+
+    .item img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      /* FIXED: 'contain' ensures the whole image shows, 'background' fills the circle */
+      object-fit: contain; 
+      background: white;
       border-radius: 50%;
-      border: 4px solid #009954;
-      box-shadow: 0 0 20px rgba(0, 153, 84, 0.4);
-      background: #000;
+      border: 3px solid var(--corp-light);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
     }
 
-    .nav-link-active { color: #007941; border-bottom: 2px solid #007941; padding-bottom: 4px; }
+    .nav-link {
+      transition: all 0.3s ease;
+    }
+    
+    .nav-link:hover {
+      color: var(--corp-light);
+    }
   </style>
 </head>
 <body>
 
-  <canvas id="bg-canvas"></canvas>
-
-  <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
+  <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50 px-8 py-4">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-4">
-        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10 w-auto" />
-        <div class="hidden md:block">
-          <span class="block font-extrabold text-gray-900 leading-none">Staff Portal</span>
-          <span class="text-[10px] text-gray-400 uppercase tracking-tighter font-bold">Medical Access Point</span>
-        </div>
+        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10" />
+        <h1 class="font-black text-gray-900 uppercase text-sm tracking-tight">Staff Terminal</h1>
       </div>
-      <div class="hidden md:flex items-center gap-8">
-        <a href="home.html" class="text-sm font-bold nav-link-active">Home</a>
-        <a href="dashboard.html" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors">Records</a>
-        <a href="reports.html" class="text-sm font-bold text-gray-500 hover:text-[#007941] transition-colors">Reports</a>
+      
+      <div class="hidden md:flex gap-8">
+        <a href="home.html" class="text-xs font-bold uppercase text-emerald-700 border-b-2 border-emerald-700">Home</a>
+        <a href="dashboard.html" class="nav-link text-xs font-bold uppercase text-gray-400">Records</a>
+        <a href="reports.html" class="nav-link text-xs font-bold uppercase text-gray-400">Reports</a>
       </div>
-      <button id="logoutBtn" class="px-5 py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold text-xs uppercase tracking-widest hover:bg-red-50 hover:text-red-600 border border-gray-200 transition">Logout</button>
+
+      <button onclick="signOutNow()" class="bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 px-5 py-2 rounded-xl text-[10px] font-bold uppercase border border-gray-200 transition">
+        Sign Out
+      </button>
     </div>
   </nav>
 
-  <div class="mt-20 overflow-hidden py-10">
-    <div class="slider-track" id="sliderTrack">
-      </div>
+  <div class="banner">
+    <div class="slider" id="imageSlider" style="--quantity: 20;">
+        </div>
   </div>
 
-  <div class="w-full text-center mt-12 px-6">
-      <h2 class="text-white font-black text-3xl tracking-tight mb-4 uppercase">Operational Modules</h2>
-      <p class="text-emerald-400 text-xs font-bold tracking-[0.3em] mb-10 uppercase">Secure Database Access</p>
-      
-      <div class="flex flex-col md:flex-row justify-center gap-6">
-          <button onclick="window.location.href='dashboard.html'" class="px-12 py-5 rounded-2xl bg-[#007941] text-white font-bold text-sm uppercase tracking-widest hover:bg-[#009954] transition-all hover:scale-105 shadow-xl">
-            Go to Records
-          </button>
-          <button onclick="window.location.href='reports.html'" class="px-12 py-5 rounded-2xl bg-white/10 text-white border border-white/20 backdrop-blur-md font-bold text-sm uppercase tracking-widest hover:bg-white/20 transition-all hover:scale-105">
-            View Analytics
-          </button>
-      </div>
+  <div class="absolute bottom-16 w-full flex flex-col items-center gap-6">
+    <h2 class="text-white font-black text-2xl uppercase tracking-widest opacity-80">Operational Modules</h2>
+    <div class="flex gap-4">
+      <a href="dashboard.html" class="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl transition-transform hover:-translate-y-1">
+        Patient Records
+      </a>
+      <a href="reports.html" class="px-10 py-5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs backdrop-blur-md transition-transform hover:-translate-y-1">
+        Clinical Reports
+      </a>
+    </div>
   </div>
 
   <script>
-    const imageList = [
+    const images = [
       "https://i.imgur.com/ZQEFR8A.jpeg", "https://i.imgur.com/AnolGwk.png", "https://i.imgur.com/ulEsYqJ.jpeg",
       "https://i.imgur.com/gcpa0h5.jpeg", "https://i.imgur.com/QyhSLel.jpeg", "https://i.imgur.com/b3WI1PI.jpeg",
       "https://i.imgur.com/0VGmsYF.jpeg", "https://i.imgur.com/jQ8mRfV.jpeg", "https://i.imgur.com/C53Uskn.jpeg",
@@ -103,79 +122,25 @@
       "https://i.imgur.com/Kkj3w4y.jpeg", "https://i.imgur.com/tGBHQJM.jpeg"
     ];
 
-    const track = document.getElementById('sliderTrack');
-    
-    // Inject images twice for infinite loop
-    [...imageList, ...imageList].forEach(url => {
-        const div = document.createElement('div');
-        div.className = 'slide-item';
-        const img = document.createElement('img');
-        img.src = url;
-        div.appendChild(img);
-        track.appendChild(div);
+    const slider = document.getElementById('imageSlider');
+    images.forEach((src, i) => {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.style.setProperty('--position', i + 1);
+      item.innerHTML = `<img src="${src}" alt="Gallery Item">`;
+      slider.appendChild(item);
     });
 
-    // --- MOLECULE BACKGROUND ---
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let molecules = [];
-    function resize() {
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      initMolecules();
-    }
-    class Molecule {
-      constructor() { this.init(); }
-      init() {
-        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 1; this.vy = (Math.random() - 0.5) * 1;
-        this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.01;
-        this.scale = Math.random() * 0.5 + 0.5;
-        this.structure = [{x:0,y:0,r:4,c:'rgba(255,255,255,0.15)'},{x:15,y:0,r:3,c:'rgba(255,255,255,0.05)'}];
-        this.bonds = [[0,1]];
-      }
-      draw() {
-        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
-        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-        this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x, this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x, this.structure[b[1]].y); ctx.stroke(); });
-        this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI*2); ctx.fillStyle = a.c; ctx.fill(); });
-        ctx.restore();
-      }
-      update() {
-        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
-        if (this.x > canvas.width + 50) this.x = -50; else if (this.x < -50) this.x = canvas.width + 50;
-        if (this.y > canvas.height + 50) this.y = -50; else if (this.y < -50) this.y = canvas.height + 50;
-      }
-    }
-    function initMolecules() {
-      molecules = []; for (let i = 0; i < 25; i++) molecules.push(new Molecule());
-    }
-    function animate() {
-      ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m => { m.update(); m.draw(); });
-      requestAnimationFrame(animate);
-    }
-    window.addEventListener('resize', resize); resize(); animate();
-
-    // --- FINAL LOGOUT FIX ---
+    // --- SUPABASE & LOGOUT ---
     const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
     const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
     const supabase = window.supabase.createClient(_URL, _KEY);
 
-    const logoutBtn = document.getElementById('logoutBtn');
-    logoutBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        try {
-            const { error } = await supabase.auth.signOut();
-            if (error) throw error;
-            // Force clear storage
-            localStorage.clear();
-            sessionStorage.clear();
-            window.location.href = "index.html";
-        } catch (error) {
-            console.error('Logout failed:', error.message);
-            // Redirect anyway to prevent being stuck
-            window.location.href = "index.html";
-        }
-    });
+    async function signOutNow() {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      window.location.replace("index.html");
+    }
   </script>
 </body>
 </html>
