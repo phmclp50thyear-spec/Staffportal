@@ -26,60 +26,69 @@
 
     #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
 
-    /* --- CIRCULAR CAROUSEL LOGIC --- */
-    .stage {
-      position: relative;
+    /* --- 3D CYLINDER ANIMATION --- */
+    .banner {
       width: 100%;
-      height: 60vh;
-      perspective: 2000px;
-      display: flex; align-items: center; justify-content: center;
-      margin-top: 50px;
-    }
-
-    .spinner {
-      position: relative;
-      width: 220px;
-      height: 220px;
-      transform-style: preserve-3d;
-      animation: rotate-cycle 40s linear infinite; /* Constant Turning */
-    }
-
-    .spinner:hover { animation-play-state: paused; } /* Pause on hover to see images */
-
-    .img-card {
-      position: absolute;
-      width: 180px;
-      height: 180px;
-      left: 20px; top: 20px;
-      border-radius: 50%; /* Circular */
-      border: 3px solid var(--corp-light);
-      background: black;
+      height: 100vh;
+      text-align: center;
       overflow: hidden;
-      box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
-      backface-visibility: hidden;
-      transition: all 0.5s ease;
+      position: relative;
     }
 
-    .img-card img {
-      width: 100%; height: 100%; object-fit: cover;
+    .banner .slider {
+      position: absolute;
+      width: 150px;
+      height: 200px;
+      top: 15%;
+      left: calc(50% - 75px);
+      transform-style: preserve-3d;
+      transform: perspective(1000px);
+      animation: autoRun 30s linear infinite;
+      z-index: 10;
     }
 
-    @keyframes rotate-cycle {
-      from { transform: rotateY(0deg); }
-      to { transform: rotateY(360deg); }
+    @keyframes autoRun {
+      from { transform: perspective(1000px) rotateX(-10deg) rotateY(0deg); }
+      to { transform: perspective(1000px) rotateX(-10deg) rotateY(360deg); }
     }
 
-    /* --- GLASS BUTTONS --- */
-    .module-link {
+    .banner .slider .item {
+      position: absolute;
+      inset: 0 0 0 0;
+      transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(450px);
+    }
+
+    .banner .slider .item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%; /* Make them circular */
+      border: 3px solid var(--corp-light);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+      background: #000;
+    }
+
+    /* --- UI ELEMENTS --- */
+    .content-overlay {
+      position: absolute;
+      bottom: 15%;
+      left: 0; width: 100%;
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 20;
+    }
+
+    .glass-btn {
       background: var(--glass-bg);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(15px);
       border: 1px solid var(--glass-border);
+      color: white;
       transition: all 0.3s ease;
     }
-    .module-link:hover {
+
+    .glass-btn:hover {
       background: rgba(16, 185, 129, 0.2);
       border-color: var(--corp-light);
-      transform: translateY(-5px);
+      transform: scale(1.05);
     }
   </style>
 </head>
@@ -89,28 +98,27 @@
 
   <nav class="w-full px-8 py-6 flex justify-between items-center z-50">
     <div class="flex items-center gap-4">
-      <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-12 w-auto" />
-      <h1 class="text-white font-black tracking-tighter uppercase">Central Terminal</h1>
+      <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10" />
+      <span class="text-white font-black tracking-widest uppercase text-sm">Staff Terminal</span>
     </div>
-    <button id="logoutBtn" class="px-6 py-2 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition">Sign Out</button>
+    <button id="logoutBtn" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest border border-red-500/30 hover:bg-red-500 hover:text-white transition">Sign Out</button>
   </nav>
 
-  <div class="stage">
-    <div class="spinner" id="spinner">
-      </div>
-  </div>
+  <div class="banner">
+    <div class="slider" id="imageSlider" style="--quantity: 20;">
+        </div>
 
-  <div class="flex justify-center gap-6 mt-10 px-6 z-50">
-    <button onclick="window.location.href='dashboard.html'" class="module-link px-10 py-5 rounded-[2rem] text-white font-black uppercase tracking-[0.2em] text-sm">
-      Patient Records
-    </button>
-    <button onclick="window.location.href='reports.html'" class="module-link px-10 py-5 rounded-[2rem] text-white font-black uppercase tracking-[0.2em] text-sm">
-      Clinical Reports
-    </button>
+    <div class="content-overlay">
+        <h2 class="text-white font-black text-3xl tracking-tighter mb-8 uppercase">Operational Modules</h2>
+        <div class="flex gap-4">
+            <button onclick="window.location.href='dashboard.html'" class="glass-btn px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest">Records</button>
+            <button onclick="window.location.href='reports.html'" class="glass-btn px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest">Analytics</button>
+        </div>
+    </div>
   </div>
 
   <script>
-    const images = [
+    const imageList = [
       "https://i.imgur.com/ZQEFR8A.jpeg", "https://i.imgur.com/AnolGwk.png", "https://i.imgur.com/ulEsYqJ.jpeg",
       "https://i.imgur.com/gcpa0h5.jpeg", "https://i.imgur.com/QyhSLel.jpeg", "https://i.imgur.com/b3WI1PI.jpeg",
       "https://i.imgur.com/0VGmsYF.jpeg", "https://i.imgur.com/jQ8mRfV.jpeg", "https://i.imgur.com/C53Uskn.jpeg",
@@ -120,24 +128,20 @@
       "https://i.imgur.com/Kkj3w4y.jpeg", "https://i.imgur.com/tGBHQJM.jpeg"
     ];
 
-    const spinner = document.getElementById('spinner');
-    const total = images.length;
-    const radius = 600; // Size of the circle
-
-    images.forEach((src, i) => {
-      const card = document.createElement('div');
-      card.className = 'img-card';
-      // Calculate position in 3D circle
-      const angle = (i * (360 / total));
-      card.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
-      
-      const img = document.createElement('img');
-      img.src = src;
-      card.appendChild(img);
-      spinner.appendChild(card);
+    const slider = document.getElementById('imageSlider');
+    
+    // Inject images with 3D positions
+    imageList.forEach((url, index) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.style.setProperty('--position', index + 1);
+        const img = document.createElement('img');
+        img.src = url;
+        item.appendChild(img);
+        slider.appendChild(item);
     });
 
-    // --- REUSED MOLECULE BG ---
+    // --- MOLECULE BACKGROUND (STAYS FOR LOGIN MATCH) ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let molecules = [];
@@ -169,7 +173,7 @@
       }
     }
     function initMolecules() {
-      molecules = []; for (let i = 0; i < 40; i++) molecules.push(new Molecule());
+      molecules = []; for (let i = 0; i < 30; i++) molecules.push(new Molecule());
     }
     function animate() {
       ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m => { m.update(); m.draw(); });
@@ -177,7 +181,7 @@
     }
     window.addEventListener('resize', resize); resize(); animate();
 
-    // --- SUPABASE ---
+    // --- LOGOUT ---
     const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
     document.getElementById('logoutBtn').onclick = async () => {
       await supabase.auth.signOut(); window.location.replace("index.html");
