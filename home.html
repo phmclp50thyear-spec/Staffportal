@@ -16,7 +16,7 @@
 
     body {
       margin: 0;
-      overflow: hidden;
+      overflow-x: hidden;
       background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
       font-family: ui-sans-serif, system-ui;
       height: 100vh;
@@ -33,10 +33,10 @@
 
     .slider {
       position: relative;
-      width: 180px;
-      height: 180px;
+      width: 300px;
+      height: 200px;
       transform-style: preserve-3d;
-      animation: spin 30s linear infinite;
+      animation: spin 60s linear infinite;
     }
 
     @keyframes spin {
@@ -50,19 +50,27 @@
     }
 
     .item img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: white;
-      border-radius: 50%;
-      border: 3px solid var(--corp-light);
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+      width: 260px;
+      height: 160px;
+      object-fit: cover;
+      background: #fff;
+      border-radius: 14px;
+      border: 2px solid var(--corp-light);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    /* Pause spin on hover */
+    .banner:hover .slider {
+      animation-play-state: paused;
     }
   </style>
 </head>
 
 <body>
 
+<!-- NAV -->
 <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50 px-8 py-4">
   <div class="max-w-7xl mx-auto flex justify-between items-center">
     <div class="flex items-center gap-4">
@@ -83,10 +91,12 @@
   </div>
 </nav>
 
+<!-- CAROUSEL -->
 <div class="banner">
   <div class="slider" id="imageSlider"></div>
 </div>
 
+<!-- CTA -->
 <div class="absolute bottom-16 w-full flex flex-col items-center gap-6">
   <h2 class="text-white font-black text-2xl uppercase tracking-widest opacity-80">
     Operational Modules
@@ -103,37 +113,57 @@
   </div>
 </div>
 
-<script>
-(function () {
+<!-- IMAGE ZOOM MODAL -->
+<div id="imageModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center z-50">
+  <div class="relative max-w-5xl w-full p-6">
+    <button id="closeModal"
+      class="absolute top-2 right-2 text-white text-3xl font-bold">&times;</button>
+    <img id="modalImage"
+      class="w-full max-h-[85vh] object-contain rounded-2xl bg-white p-4 shadow-2xl" />
+  </div>
+</div>
 
-  /* -------- SUPABASE (SAME AS DASHBOARD) -------- */
+<script>
+(() => {
+
+  /* -------- SUPABASE -------- */
   const supabase = window.supabase.createClient(
     'https://xpdtzvxjlguhcxkgowsg.supabase.co',
     'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
   );
 
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange((_, session) => {
     if (!session) window.location.replace("index.html");
   });
 
-  document.getElementById('logoutBtn').onclick = async () => {
+  document.getElementById("logoutBtn").onclick = async () => {
     await supabase.auth.signOut();
     window.location.replace("index.html");
   };
 
-  /* -------- IMAGE CAROUSEL (FIXED) -------- */
+  /* -------- IMAGE CAROUSEL -------- */
   const images = [
-    "https://i.imgur.com/ZQEFR8A.jpeg","https://i.imgur.com/AnolGwk.png",
-    "https://i.imgur.com/ulEsYqJ.jpeg","https://i.imgur.com/gcpa0h5.jpeg",
-    "https://i.imgur.com/QyhSLel.jpeg","https://i.imgur.com/b3WI1PI.jpeg",
-    "https://i.imgur.com/0VGmsYF.jpeg","https://i.imgur.com/jQ8mRfV.jpeg",
-    "https://i.imgur.com/C53Uskn.jpeg","https://i.imgur.com/48gJAM5.jpeg",
-    "https://i.imgur.com/fowtVc2.jpeg","https://i.imgur.com/9hZWDtL.jpeg"
+    "https://i.imgur.com/ZQEFR8A.jpeg",
+    "https://i.imgur.com/AnolGwk.png",
+    "https://i.imgur.com/ulEsYqJ.jpeg",
+    "https://i.imgur.com/gcpa0h5.jpeg",
+    "https://i.imgur.com/QyhSLel.jpeg",
+    "https://i.imgur.com/b3WI1PI.jpeg",
+    "https://i.imgur.com/0VGmsYF.jpeg",
+    "https://i.imgur.com/jQ8mRfV.jpeg",
+    "https://i.imgur.com/C53Uskn.jpeg",
+    "https://i.imgur.com/48gJAM5.jpeg",
+    "https://i.imgur.com/fowtVc2.jpeg",
+    "https://i.imgur.com/9hZWDtL.jpeg"
   ];
 
   const slider = document.getElementById("imageSlider");
   const radius = 420;
   const total = images.length;
+
+  const modal = document.getElementById("imageModal");
+  const modalImage = document.getElementById("modalImage");
+  const closeModal = document.getElementById("closeModal");
 
   images.forEach((src, i) => {
     const angle = (360 / total) * i;
@@ -144,8 +174,24 @@
     const img = document.createElement("img");
     img.src = src;
 
+    img.onclick = () => {
+      modalImage.src = src;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    };
+
     item.appendChild(img);
     slider.appendChild(item);
+  });
+
+  closeModal.onclick = () => modal.classList.add("hidden");
+
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.classList.add("hidden");
+  };
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") modal.classList.add("hidden");
   });
 
 })();
