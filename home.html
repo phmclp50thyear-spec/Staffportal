@@ -4,64 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Staff Portal | Home</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    :root { 
-      --corp-green: #007941; 
-      --corp-light: #009954; 
-    }
-    
     body {
-      margin: 0; padding: 0; overflow: hidden;
+      margin: 0; padding: 0;
       background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
       font-family: ui-sans-serif, system-ui;
-      height: 100vh;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
     #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
 
-    /* --- 3D CYLINDER ANIMATION --- */
-    .banner {
-      width: 100%;
-      height: 70vh;
-      text-align: center;
-      overflow: hidden;
-      position: relative;
+    /* --- SMOOTH INFINITE SLIDER --- */
+    .slider-track {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      width: calc(250px * 40); /* Doubled for infinite effect */
+      animation: scroll 60s linear infinite;
     }
 
-    .banner .slider {
-      position: absolute;
-      width: 150px;
+    .slider-track:hover { animation-play-state: paused; }
+
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(calc(-250px * 20)); }
+    }
+
+    .slide-item {
+      width: 200px;
       height: 200px;
-      transform-style: preserve-3d;
-      transform: perspective(1000px) rotateX(-10deg);
-      animation: autoRun 30s linear infinite;
+      margin: 0 25px;
+      flex-shrink: 0;
     }
 
-    @keyframes autoRun {
-      from { transform: perspective(1000px) rotateX(-10deg) rotateY(0deg); }
-      to { transform: perspective(1000px) rotateX(-10deg) rotateY(360deg); }
-    }
-
-    .banner .slider .item {
-      position: absolute;
-      inset: 0 0 0 0;
-      transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(350px);
-    }
-
-    .banner .slider .item img {
+    .slide-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       border-radius: 50%;
-      border: 3px solid var(--corp-light);
-      box-shadow: 0 0 20px rgba(0, 153, 84, 0.5);
+      border: 4px solid #009954;
+      box-shadow: 0 0 20px rgba(0, 153, 84, 0.4);
       background: #000;
     }
 
@@ -90,16 +73,22 @@
     </div>
   </nav>
 
-  <div class="banner">
-    <div class="slider" id="imageSlider" style="--quantity: 20;">
-        </div>
+  <div class="mt-20 overflow-hidden py-10">
+    <div class="slider-track" id="sliderTrack">
+      </div>
   </div>
 
-  <div class="absolute bottom-10 w-full text-center z-20">
-      <h2 class="text-white font-black text-3xl tracking-tight mb-8 uppercase">Operational Modules</h2>
-      <div class="flex justify-center gap-4">
-          <button onclick="window.location.href='dashboard.html'" class="px-10 py-4 rounded-2xl bg-[#007941] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#009954] transition shadow-lg">Records</button>
-          <button onclick="window.location.href='reports.html'" class="px-10 py-4 rounded-2xl bg-white/10 text-white border border-white/20 backdrop-blur-md font-bold text-xs uppercase tracking-widest hover:bg-white/20 transition">Analytics</button>
+  <div class="w-full text-center mt-12 px-6">
+      <h2 class="text-white font-black text-3xl tracking-tight mb-4 uppercase">Operational Modules</h2>
+      <p class="text-emerald-400 text-xs font-bold tracking-[0.3em] mb-10 uppercase">Secure Database Access</p>
+      
+      <div class="flex flex-col md:flex-row justify-center gap-6">
+          <button onclick="window.location.href='dashboard.html'" class="px-12 py-5 rounded-2xl bg-[#007941] text-white font-bold text-sm uppercase tracking-widest hover:bg-[#009954] transition-all hover:scale-105 shadow-xl">
+            Go to Records
+          </button>
+          <button onclick="window.location.href='reports.html'" class="px-12 py-5 rounded-2xl bg-white/10 text-white border border-white/20 backdrop-blur-md font-bold text-sm uppercase tracking-widest hover:bg-white/20 transition-all hover:scale-105">
+            View Analytics
+          </button>
       </div>
   </div>
 
@@ -114,18 +103,19 @@
       "https://i.imgur.com/Kkj3w4y.jpeg", "https://i.imgur.com/tGBHQJM.jpeg"
     ];
 
-    const slider = document.getElementById('imageSlider');
-    imageList.forEach((url, index) => {
-        const item = document.createElement('div');
-        item.className = 'item';
-        item.style.setProperty('--position', index + 1);
+    const track = document.getElementById('sliderTrack');
+    
+    // Inject images twice for infinite loop
+    [...imageList, ...imageList].forEach(url => {
+        const div = document.createElement('div');
+        div.className = 'slide-item';
         const img = document.createElement('img');
         img.src = url;
-        item.appendChild(img);
-        slider.appendChild(item);
+        div.appendChild(img);
+        track.appendChild(div);
     });
 
-    // MOLECULE BACKGROUND
+    // --- MOLECULE BACKGROUND ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let molecules = [];
@@ -165,13 +155,26 @@
     }
     window.addEventListener('resize', resize); resize(); animate();
 
-    // SUPABASE LOGOUT LOGIC
-    const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
-    
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      const { error } = await supabase.auth.signOut();
-      if (error) console.error('Error logging out:', error.message);
-      window.location.replace("index.html");
+    // --- FINAL LOGOUT FIX ---
+    const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
+    const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
+    const supabase = window.supabase.createClient(_URL, _KEY);
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            // Force clear storage
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        } catch (error) {
+            console.error('Logout failed:', error.message);
+            // Redirect anyway to prevent being stuck
+            window.location.href = "index.html";
+        }
     });
   </script>
 </body>
