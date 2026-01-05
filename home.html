@@ -3,27 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Home</title>
+<title>Staff Portal | Home</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-:root{
-  --nav-h:88px;
-}
+:root { --nav-h:88px; }
 
 html,body{
   margin:0;
   height:100%;
-  overflow:hidden;
   background:#022c22;
+  overflow:hidden;
+  font-family:system-ui;
 }
 
-/* ================= LAYOUT ================= */
+/* ================= NAV SAFE AREA ================= */
 .main{
   height:calc(100vh - var(--nav-h));
-  margin-top:var(--nav-h);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -36,12 +34,12 @@ html,body{
   width:220px;
   height:330px;
   transform-style:preserve-3d;
-  animation:spin 100s linear infinite;
+  animation:spin 90s linear infinite;
 }
 
 @keyframes spin{
-  from{transform:rotateY(0deg);}
-  to{transform:rotateY(360deg);}
+  from{ transform:rotateY(0deg); }
+  to{ transform:rotateY(360deg); }
 }
 
 .main:hover .slider{
@@ -57,7 +55,6 @@ html,body{
   backface-visibility:hidden;
 }
 
-/* CRITICAL: no forced scaling */
 .item img{
   max-width:220px;
   max-height:330px;
@@ -69,8 +66,7 @@ html,body{
   border:2px solid #10b981;
   box-shadow:0 20px 40px rgba(0,0,0,.45);
 
-  /* Pixelation fix */
-  image-rendering:crisp-edges;
+  image-rendering:auto;
   transform:translateZ(0);
   will-change:transform;
   cursor:pointer;
@@ -90,7 +86,7 @@ html,body{
 <nav class="fixed top-0 left-0 right-0 h-[88px] bg-white border-b shadow z-40 px-8 flex items-center justify-between">
   <div class="flex items-center gap-4">
     <img src="https://i.imgur.com/VbZKWAf.png" class="h-10">
-    <span class="font-black text-xs uppercase">Staff Portal</span>
+    <span class="font-black text-xs uppercase">Staff Terminal</span>
   </div>
   <button id="logoutBtn"
     class="text-xs font-bold uppercase bg-gray-100 hover:bg-red-50 hover:text-red-600 px-5 py-2 rounded-xl border">
@@ -99,7 +95,7 @@ html,body{
 </nav>
 
 <!-- MAIN -->
-<div class="main">
+<div class="main" style="margin-top:88px">
   <div class="slider" id="slider"></div>
 </div>
 
@@ -114,28 +110,45 @@ html,body{
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
 
-/* AUTH */
+/* ================= AUTH ================= */
 const supabase=window.supabase.createClient(
   "https://xpdtzvxjlguhcxkgowsg.supabase.co",
   "sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN"
 );
 
-supabase.auth.onAuthStateChange((_,s)=>{ if(!s) location.href="index.html"; });
-logoutBtn.onclick=async()=>{ await supabase.auth.signOut(); location.href="index.html"; };
+supabase.auth.onAuthStateChange((_,s)=>{
+  if(!s) location.href="index.html";
+});
 
-/* IMAGES */
-const images=[ /* your 20 URLs unchanged */ ];
+logoutBtn.onclick=async()=>{
+  await supabase.auth.signOut();
+  location.href="index.html";
+};
+
+/* ================= IMAGES (REAL DATA) ================= */
+const images=[
+  "https://i.imgur.com/ZQEFR8A.jpeg","https://i.imgur.com/AnolGwk.png",
+  "https://i.imgur.com/ulEsYqJ.jpeg","https://i.imgur.com/gcpa0h5.jpeg",
+  "https://i.imgur.com/QyhSLel.jpeg","https://i.imgur.com/b3WI1PI.jpeg",
+  "https://i.imgur.com/0VGmsYF.jpeg","https://i.imgur.com/jQ8mRfV.jpeg",
+  "https://i.imgur.com/C53Uskn.jpeg","https://i.imgur.com/48gJAM5.jpeg",
+  "https://i.imgur.com/fowtVc2.jpeg","https://i.imgur.com/9hZWDtL.jpeg",
+  "https://i.imgur.com/ZQEFR8A.jpeg","https://i.imgur.com/AnolGwk.png",
+  "https://i.imgur.com/ulEsYqJ.jpeg","https://i.imgur.com/gcpa0h5.jpeg",
+  "https://i.imgur.com/QyhSLel.jpeg","https://i.imgur.com/b3WI1PI.jpeg",
+  "https://i.imgur.com/0VGmsYF.jpeg","https://i.imgur.com/jQ8mRfV.jpeg"
+];
 
 const slider=document.getElementById("slider");
 
-/* Radius tuned for 1366x768 */
-const radius=520;
+/* Dynamic radius (fits 1366x768 safely) */
+const radius=Math.max(480, images.length*18);
 const step=360/images.length;
 
 images.forEach((src,i)=>{
-  const d=document.createElement("div");
-  d.className="item";
-  d.style.transform=`rotateY(${i*step}deg) translateZ(${radius}px)`;
+  const item=document.createElement("div");
+  item.className="item";
+  item.style.transform=`rotateY(${i*step}deg) translateZ(${radius}px)`;
 
   const img=new Image();
   img.src=src;
@@ -146,13 +159,16 @@ images.forEach((src,i)=>{
     imageModal.classList.add("flex");
   };
 
-  d.appendChild(img);
-  slider.appendChild(d);
+  item.appendChild(img);
+  slider.appendChild(item);
 });
 
 /* MODAL */
 closeModal.onclick=()=>imageModal.classList.add("hidden");
-imageModal.onclick=e=>{ if(e.target===imageModal) imageModal.classList.add("hidden"); };
+imageModal.onclick=e=>{
+  if(e.target===imageModal) imageModal.classList.add("hidden");
+};
+
 });
 </script>
 
