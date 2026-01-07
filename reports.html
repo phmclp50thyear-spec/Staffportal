@@ -113,38 +113,109 @@ const supabase = window.supabase.createClient(
 );
 
 async function loadReports() {
-  const { data } = await supabase.from('patient_records').select('*');
-  if (!data || !data.length) return;
+  try {
+    const { data, error } = await supabase.from('patient_records').select('*');
+    
+    if (error) throw error;
 
-  const totalRevenue = data.reduce((s,r)=>s+r.amount,0);
-  const census = data.length;
-  const avg = totalRevenue / census;
-  const max = Math.max(...data.map(r=>r.amount));
+    if (!data || !data.length) {
+      document.getElementById('loadingState').innerText = "No data found in database.";
+      return;
+    }
 
-  document.getElementById('totalRevenue').innerText = `₱${totalRevenue.toLocaleString()}`;
-  document.getElementById('totalCensus').innerText = census;
-  document.getElementById('avgRevenue').innerText = `₱${avg.toFixed(0)}`;
-  document.getElementById('maxBill').innerText = `₱${max.toLocaleString()}`;
+    // --- CALCULATIONS ---
+    const totalRevenue = data.reduce((s, r) => s + (r.amount || 0), 0);
+    const census = data.length;
+    const avg = totalRevenue / census;
+    const max = Math.max(...data.map(r => r.amount || 0));
 
-  const revVariance = totalRevenue - (avg * census);
-  const maxVariance = max - avg;
+    // Update UI
+    document.getElementById('totalRevenue').innerText = `₱${totalRevenue.toLocaleString()}`;
+    document.getElementById('totalCensus').innerText = census.toLocaleString();
+    document.getElementById('avgRevenue').innerText = `₱${avg.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+    document.getElementById('maxBill').innerText = `₱${max.toLocaleString()}`;
 
-  document.getElementById('revVar').innerHTML =
-    revVariance >= 0
-      ? `▲ ₱${revVariance.toFixed(0)} above avg`
-      : `▼ ₱${Math.abs(revVariance).toFixed(0)} below avg`;
+    // Variance logic
+    const maxVariance = max - avg;
+    document.getElementById('maxVar').innerHTML = `<span class="text-orange-500">▲ ₱${maxVariance.toLocaleString()} above avg</span>`;
 
-  document.getElementById('maxVar').innerHTML =
-    maxVariance >= 0
-      ? `▲ ₱${maxVariance.toFixed(0)} above avg`
-      : `▼ ₱${Math.abs(maxVariance).toFixed(0)} below avg`;
+    // --- CHART: GENDER ---
+    const maleCount = data.filter(r => r.gender === 'Male').length;
+    const femaleCount = data.filter(r => r.gender === 'Female').length;
 
-  document.getElementById('loadingState').classList.add('hidden');
-  document.getElementById('reportContent').classList.remove('hidden');
+    new Chart(document.getElementById('genderChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Male', 'Female'],
+        datasets: [{
+          data: [maleCount, femaleCount],
+          backgroundColor: ['#0ea5e9', '#ec4899'],
+          borderWidth: 0
+        }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
 
-  // Charts (unchanged)
+    // --- CHART: PAYMENT TYPE ---
+    const payments = data.reduce((acc, r) => {
+      acc[r.payment_type] = (acc[r.payment_type] || 0) + 1;
+      return acc;
+    }, {});
+
+    new Chart(document.getElementById('paymentChart'), {
+      type: 'pie',
+      data: {
+        labels: Object.keys(payments),
+        datasets: [{
+          data: Object.values(payments),
+          backgroundColor: ['#10b981', '#f59e0b', '#6366f1'],
+          borderWidth: 0
+        }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // --- CHART: AGE DEMOGRAPHICS ---
+    const ageGroups = { '0-18': 0, '19-35': 0, '36-50': 0, '51+': 0 };
+    data.forEach(r => {
+      if (r.age <= 18) ageGroups['0-18']++;
+      else if (r.age <= 35) ageGroups['19-35']++;
+      else if (r.age <= 50) ageGroups['36-50']++;
+      else ageGroups['51+']++;
+    });
+
+    new Chart(document.getElementById('ageChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(ageGroups),
+        datasets: [{
+          label: 'Patients',
+          data: Object.values(ageGroups),
+          backgroundColor: '#10b981',
+          borderRadius: 10
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    // FINISH: Hide loading, show content
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('reportContent').classList.remove('hidden');
+
+  } catch (err) {
+    console.error("Report Error:", err);
+    document.getElementById('loadingState').innerHTML = `<span class="text-red-500">Error: ${err.message}</span>`;
+  }
 }
+
+// Ensure molecules background animation runs
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
 loadReports();
 </script>
 </body>
 </html>
+
