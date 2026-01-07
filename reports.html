@@ -100,7 +100,7 @@
   </main>
 
   <script>
-    // --- MOLECULE BACKGROUND ANIMATION ---
+    // --- MOLECULE BACKGROUND ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let molecules = [];
@@ -127,10 +127,7 @@
         if(this.y > canvas.height+100) this.y = -100; else if(this.y < -100) this.y = canvas.height+100;
       }
     }
-    function initBG() { 
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      molecules = []; for(let i=0; i<20; i++) molecules.push(new Molecule());
-    }
+    function initBG() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; molecules = []; for(let i=0; i<20; i++) molecules.push(new Molecule()); }
     function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=>{m.update(); m.draw();}); requestAnimationFrame(animate); }
     window.addEventListener('resize', initBG); initBG(); animate();
 
@@ -138,22 +135,22 @@
     let globalData = [];
     let charts = {};
 
-    const supabase = window.supabase.createClient(
+    // Renamed to 'db' to prevent "already declared" error
+    const db = window.supabase.createClient(
         'https://xpdtzvxjlguhcxkgowsg.supabase.co',
         'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
     );
 
     async function init() {
         try {
-            const { data, error } = await supabase.from('patient_records').select('*');
+            const { data, error } = await db.from('patient_records').select('*');
             if (error) throw error;
             if (!data || data.length === 0) {
-                document.getElementById('loadingState').innerText = "No data found in database.";
+                document.getElementById('loadingState').innerText = "No data found.";
                 return;
             }
             globalData = data;
 
-            // Populate Doctor Filter
             const doctors = [...new Set(data.map(r => r.doctor_name))].filter(Boolean);
             const select = document.getElementById('doctorFilter');
             doctors.forEach(doc => {
@@ -164,8 +161,7 @@
 
             updateDashboard();
         } catch (err) {
-            console.error("Init Error:", err);
-            document.getElementById('loadingState').innerHTML = `<span class="text-red-500 text-sm">Error syncing: ${err.message}</span>`;
+            document.getElementById('loadingState').innerHTML = `<span class="text-red-400 font-bold">Error: ${err.message}</span>`;
         }
     }
 
@@ -175,7 +171,6 @@
 
         if (filteredData.length === 0) return;
 
-        // 1. Dynamic Date Detection
         const dates = filteredData.map(r => new Date(r.date)).filter(d => !isNaN(d));
         const latestDate = new Date(Math.max(...dates));
         const currentMonth = latestDate.getMonth();
@@ -183,7 +178,6 @@
 
         document.getElementById('periodLabel').innerText = `Reporting Period: ${latestDate.toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
-        // 2. Filter Periods
         const currentPeriod = filteredData.filter(r => {
             const d = new Date(r.date);
             return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -201,19 +195,15 @@
             return d.getMonth() === currentMonth && d.getFullYear() === (currentYear - 1);
         });
 
-        // 3. Stats
         const sum = (arr) => arr.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
         const curTotal = sum(currentPeriod);
         
-        // 4. Update UI
         document.getElementById('totalRevenue').innerText = `₱${curTotal.toLocaleString()}`;
         document.getElementById('totalCensus').innerText = currentPeriod.length;
         document.getElementById('avgRevenue').innerText = `₱${(curTotal / (currentPeriod.length || 1)).toLocaleString(undefined, {maximumFractionDigits:0})}`;
-        
         const maxAmt = currentPeriod.length > 0 ? Math.max(...currentPeriod.map(r => Number(r.amount) || 0)) : 0;
         document.getElementById('maxBill').innerText = `₱${maxAmt.toLocaleString()}`;
 
-        // 5. Variances
         updateVariance('revVar', curTotal, sum(prevMonthPeriod), sum(prevYearPeriod), '₱');
         updateVariance('censusVar', currentPeriod.length, prevMonthPeriod.length, prevYearPeriod.length, '');
 
@@ -237,17 +227,17 @@
 
     function renderCharts(data) {
         Object.values(charts).forEach(c => c.destroy());
-
-        // Gender Chart
+        
+        // Gender Distribution
         const genM = data.filter(r => r.gender === 'Male').length;
         const genF = data.filter(r => r.gender === 'Female').length;
         charts.gender = new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
             data: { labels: ['Male', 'Female'], datasets: [{ data: [genM, genF], backgroundColor: ['#0ea5e9', '#ec4899'], borderWidth: 0 }] },
-            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            options: { plugins: { legend: { position: 'bottom' } } }
         });
 
-        // Age Chart
+        // Age Demographics
         const ageB = { '0-18': 0, '19-35': 0, '36-50': 0, '51+': 0 };
         data.forEach(r => {
             const a = Number(r.age);
@@ -255,22 +245,21 @@
         });
         charts.age = new Chart(document.getElementById('ageChart'), {
             type: 'bar',
-            data: { labels: Object.keys(ageB), datasets: [{ label: 'Patients', data: Object.values(ageB), backgroundColor: '#10b981', borderRadius: 8 }] },
-            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            data: { labels: Object.keys(ageB), datasets: [{ label: 'Patients', data: Object.values(ageB), backgroundColor: '#10b981', borderRadius: 8 }] }
         });
 
-        // Payment Chart
+        // Payment Methods
         const pTypes = { HMO: 0, Cash: 0, Company: 0 };
         data.forEach(r => { if(pTypes[r.payment_type] !== undefined) pTypes[r.payment_type]++; });
         charts.payment = new Chart(document.getElementById('paymentChart'), {
             type: 'pie',
             data: { labels: Object.keys(pTypes), datasets: [{ data: Object.values(pTypes), backgroundColor: ['#6366f1', '#f59e0b', '#10b981'], borderWidth: 0 }] },
-            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            options: { plugins: { legend: { position: 'bottom' } } }
         });
     }
 
     async function logout() {
-        await supabase.auth.signOut();
+        await db.auth.signOut();
         window.location.href = "index.html";
     }
 
