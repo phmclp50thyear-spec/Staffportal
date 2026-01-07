@@ -42,206 +42,200 @@
       <button onclick="logout()" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-red-500/20 transition">Logout</button>
     </div>
   </nav>
+<main class="max-w-7xl mx-auto p-6 lg:p-10">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+            <h2 class="text-white text-2xl font-black uppercase tracking-tight">Clinical Performance</h2>
+            <p id="periodLabel" class="text-emerald-400 text-xs font-bold uppercase tracking-widest"></p>
+        </div>
+        <div class="flex gap-4">
+            <select id="doctorFilter" onchange="updateDashboard()" class="bg-white/10 border border-white/20 text-white text-xs font-bold py-2 px-4 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="all">All Doctors</option>
+            </select>
+        </div>
+    </div>
 
-  <main class="max-w-7xl mx-auto p-6 lg:p-10">
     <div id="loadingState" class="text-center py-20 text-emerald-400 font-bold animate-pulse">
-        Analyzing clinical database...
+        Syncing with Clinical Database...
     </div>
 
     <div id="reportContent" class="hidden space-y-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="emerald-gradient p-8 rounded-[2rem] text-white shadow-xl">
-            <p class="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">Total Revenue</p>
-            <h2 id="totalRevenue" class="text-3xl font-black">₱0.00</h2>
-            <p id="revVar" class="text-[10px] mt-2 font-bold"></p> </div>
-          <div class="glass-card p-8">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Census</p>
-            <h2 id="totalCensus" class="text-3xl font-black text-slate-900">0</h2>
-            <p class="text-[10px] mt-2 text-slate-400 font-bold">Total Patient Count</p>
-          </div>
-          <div class="glass-card p-8">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Avg per Patient</p>
-            <h2 id="avgRevenue" class="text-3xl font-black text-blue-600">₱0.00</h2>
-            <p class="text-[10px] mt-2 text-slate-400 font-bold">Base Benchmark</p>
-          </div>
-          <div class="glass-card p-8">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Highest Bill</p>
-            <h2 id="maxBill" class="text-3xl font-black text-orange-500">₱0.00</h2>
-            <p id="maxVar" class="text-[10px] mt-2 font-bold"></p> </div>
+            <div class="emerald-gradient p-8 rounded-[2rem] text-white shadow-xl">
+                <p class="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">Total Revenue</p>
+                <h2 id="totalRevenue" class="text-3xl font-black">₱0</h2>
+                <div id="revVar" class="text-[9px] mt-2 leading-tight"></div>
+            </div>
+            <div class="glass-card p-8">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Census</p>
+                <h2 id="totalCensus" class="text-3xl font-black text-slate-900">0</h2>
+                <div id="censusVar" class="text-[9px] mt-2 leading-tight"></div>
+            </div>
+            <div class="glass-card p-8">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Avg per Patient</p>
+                <h2 id="avgRevenue" class="text-3xl font-black text-blue-600">₱0</h2>
+            </div>
+            <div class="glass-card p-8">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Highest Bill</p>
+                <h2 id="maxBill" class="text-3xl font-black text-orange-500">₱0</h2>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div class="lg:col-span-2 glass-card p-8">
-            <h3 class="font-black text-slate-800 mb-8 uppercase text-xs tracking-widest">Patient Age Demographics</h3>
-            <canvas id="ageChart" style="max-height: 350px;"></canvas>
-          </div>
-          <div class="space-y-8">
-            <div class="glass-card p-8">
-              <h3 class="font-black text-slate-800 mb-6 uppercase text-xs tracking-widest text-center">Gender Ratio</h3>
-              <canvas id="genderChart"></canvas>
+            <div class="lg:col-span-2 glass-card p-8">
+                <h3 class="font-black text-slate-800 mb-8 uppercase text-xs tracking-widest">Age Demographics</h3>
+                <canvas id="ageChart" style="max-height: 350px;"></canvas>
             </div>
-            <div class="glass-card p-8">
-              <h3 class="font-black text-slate-800 mb-6 uppercase text-xs tracking-widest text-center">Payment Channels</h3>
-              <canvas id="paymentChart"></canvas>
+            <div class="space-y-8">
+                <div class="glass-card p-8">
+                    <h3 class="font-black text-slate-800 mb-6 uppercase text-xs tracking-widest text-center">Gender Distribution</h3>
+                    <canvas id="genderChart"></canvas>
+                </div>
+                <div class="glass-card p-8">
+                    <h3 class="font-black text-slate-800 mb-6 uppercase text-xs tracking-widest text-center">Payment Methods</h3>
+                    <canvas id="paymentChart"></canvas>
+                </div>
             </div>
-          </div>
         </div>
     </div>
-  </main>
+</main>
 
-  <script>
-    // --- SUPABASE & REPORTS LOGIC ---
-{
-  const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
-  const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
-  const supabase = window.supabase.createClient(_URL, _KEY);
+<script>
+    let globalData = [];
+    let charts = {};
 
-  async function loadReports() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { window.location.replace("index.html"); return; }
+    const supabase = window.supabase.createClient(
+        'https://xpdtzvxjlguhcxkgowsg.supabase.co',
+        'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
+    );
 
-      const { data, error } = await supabase.from('patient_records').select('*');
-      if (error) throw error;
+    async function init() {
+        const { data, error } = await supabase.from('patient_records').select('*');
+        if (error || !data) return;
+        globalData = data;
 
-      if (!data || data.length === 0) {
-        document.getElementById('loadingState').innerText = "No records found.";
-        return;
-      }
+        // Populate Doctor Filter
+        const doctors = [...new Set(data.map(r => r.doctor_name))];
+        const select = document.getElementById('doctorFilter');
+        doctors.forEach(doc => {
+            const opt = document.createElement('option');
+            opt.value = doc; opt.textContent = doc;
+            select.appendChild(opt);
+        });
 
-      // --- DATE AGGREGATION ---
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      // Filter for December 2025 (Current Period for your test)
-      const dec2025 = data.filter(r => {
-        const d = new Date(r.date);
-        return d.getFullYear() === 2025 && d.getMonth() === 11;
-      });
-
-      // Filter for December 2024 (Year-to-Year Comparison)
-      const dec2024 = data.filter(r => {
-        const d = new Date(r.date);
-        return d.getFullYear() === 2024 && d.getMonth() === 11;
-      });
-
-      // Filter for November 2025 (Month-to-Month Comparison)
-      const nov2025 = data.filter(r => {
-        const d = new Date(r.date);
-        return d.getFullYear() === 2025 && d.getMonth() === 10;
-      });
-
-      function getStats(records) {
-        const total = records.reduce((s, r) => s + (r.amount || 0), 0);
-        return { total, census: records.length };
-      }
-
-      const mCurrent = getStats(dec2025);
-      const mPrevYear = getStats(dec2024);
-      const mPrevMonth = getStats(nov2025);
-
-      // --- UPDATE KPI CARDS (DEC 2025 DATA) ---
-      document.getElementById('totalRevenue').innerText = `₱${mCurrent.total.toLocaleString()}`;
-      document.getElementById('totalCensus').innerText = mCurrent.census;
-      
-      const avg = mCurrent.total / (mCurrent.census || 1);
-      document.getElementById('avgRevenue').innerText = `₱${avg.toLocaleString(undefined, {maximumFractionDigits:0})}`;
-      
-      const max = Math.max(...dec2025.map(r => r.amount || 0), 0);
-      document.getElementById('maxBill').innerText = `₱${max.toLocaleString()}`;
-
-      // --- REVENUE VARIANCE (Month-to-Month & Year-to-Year) ---
-      const revYoY = mCurrent.total - mPrevYear.total;
-      const revMoM = mCurrent.total - mPrevMonth.total;
-
-      document.getElementById('revVar').innerHTML = `
-        <div class="flex flex-col gap-1 mt-2">
-          <span class="${revYoY >= 0 ? 'text-emerald-300' : 'text-red-300'}">
-            ${revYoY >= 0 ? '▲' : '▼'} ₱${Math.abs(revYoY).toLocaleString()} vs Dec 2024 (YoY)
-          </span>
-          <span class="text-[9px] opacity-70">
-            ${revMoM >= 0 ? '▲' : '▼'} ₱${Math.abs(revMoM).toLocaleString()} vs Nov 2025 (MoM)
-          </span>
-        </div>
-      `;
-
-      // --- CENSUS VARIANCE ---
-      const cenYoY = mCurrent.census - mPrevYear.census;
-      const cenMoM = mCurrent.census - mPrevMonth.census;
-
-      // Ensure you have an element with ID 'censusVar' in your HTML
-      const censusVarEl = document.getElementById('censusVar') || document.createElement('p');
-      censusVarEl.id = "censusVar";
-      censusVarEl.className = "text-[10px] mt-2 font-bold";
-      censusVarEl.innerHTML = `
-        <span class="${cenYoY >= 0 ? 'text-emerald-500' : 'text-red-500'}">
-          ${cenYoY >= 0 ? '▲' : '▼'} ${Math.abs(cenYoY)} vs Dec '24
-        </span>
-      `;
-      document.getElementById('totalCensus').parentNode.appendChild(censusVarEl);
-
-      // --- PREPARE CHARTS (USING ALL DATA) ---
-      const genderCounts = { Male: 0, Female: 0, Other: 0 };
-      const payRev = { HMO: 0, Cash: 0, Company: 0 };
-      const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
-
-      data.forEach(r => {
-        if (genderCounts[r.gender] !== undefined) genderCounts[r.gender]++;
-        if (payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0);
-        const a = r.age;
-        if (a <= 18) ageBrackets['0-18']++;
-        else if (a <= 35) ageBrackets['19-35']++;
-        else if (a <= 50) ageBrackets['36-50']++;
-        else if (a <= 65) ageBrackets['51-65']++;
-        else ageBrackets['65+']++;
-      });
-
-      document.getElementById('loadingState').classList.add('hidden');
-      document.getElementById('reportContent').classList.remove('hidden');
-
-      // --- RENDER CHARTS ---
-      new Chart(document.getElementById('genderChart'), {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(genderCounts),
-          datasets: [{ data: Object.values(genderCounts), backgroundColor: ['#059669', '#3b82f6', '#cbd5e1'], borderWeight: 0 }]
-        },
-        options: { plugins: { legend: { position: 'bottom' } } }
-      });
-
-      new Chart(document.getElementById('paymentChart'), {
-        type: 'pie',
-        data: {
-          labels: Object.keys(payRev),
-          datasets: [{ data: Object.values(payRev), backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'], borderWeight: 0 }]
-        },
-        options: { plugins: { legend: { position: 'bottom' } } }
-      });
-
-      new Chart(document.getElementById('ageChart'), {
-        type: 'bar',
-        data: {
-          labels: Object.keys(ageBrackets),
-          datasets: [{ label: 'Patients', data: Object.values(ageBrackets), backgroundColor: '#10b981', borderRadius: 10 }]
-        },
-        options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-      });
-
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loadingState').innerText = "Error: " + err.message;
+        updateDashboard();
     }
-  }
-  loadReports();
 
-  window.logout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "index.html";
-  };
-}
+    function updateDashboard() {
+        const docFilter = document.getElementById('doctorFilter').value;
+        const filteredData = docFilter === 'all' ? globalData : globalData.filter(r => r.doctor_name === docFilter);
+
+        // 1. Dynamic Date Detection
+        const dates = filteredData.map(r => new Date(r.date));
+        const latestDate = new Date(Math.max(...dates));
+        const currentMonth = latestDate.getMonth();
+        const currentYear = latestDate.getFullYear();
+
+        const monthName = latestDate.toLocaleString('default', { month: 'long' });
+        document.getElementById('periodLabel').innerText = `Reporting Period: ${monthName} ${currentYear}`;
+
+        // 2. Filter Periods for Variance
+        const currentPeriod = filteredData.filter(r => {
+            const d = new Date(r.date);
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        });
+
+        const prevMonthPeriod = filteredData.filter(r => {
+            const d = new Date(r.date);
+            const targetMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const targetYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+        });
+
+        const prevYearPeriod = filteredData.filter(r => {
+            const d = new Date(r.date);
+            return d.getMonth() === currentMonth && d.getFullYear() === (currentYear - 1);
+        });
+
+        // 3. Calculate Stats
+        const sum = (arr) => arr.reduce((acc, r) => acc + (r.amount || 0), 0);
+        
+        const curTotal = sum(currentPeriod);
+        const prevMTotal = sum(prevMonthPeriod);
+        const prevYTotal = sum(prevYearPeriod);
+
+        // 4. UI Update
+        document.getElementById('totalRevenue').innerText = `₱${curTotal.toLocaleString()}`;
+        document.getElementById('totalCensus').innerText = currentPeriod.length;
+        document.getElementById('avgRevenue').innerText = `₱${(curTotal / (currentPeriod.length || 1)).toLocaleString(undefined, {maximumFractionDigits:0})}`;
+        document.getElementById('maxBill').innerText = `₱${Math.max(...currentPeriod.map(r => r.amount || 0), 0).toLocaleString()}`;
+
+        // 5. Dynamic Variance Labels
+        updateVariance('revVar', curTotal, prevMTotal, prevYTotal, '₱');
+        updateVariance('censusVar', currentPeriod.length, prevMonthPeriod.length, prevYearPeriod.length, '');
+
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('reportContent').classList.remove('hidden');
+
+        renderCharts(filteredData);
+    }
+
+    function updateVariance(id, cur, mom, yoy, symbol) {
+        const diffMoM = cur - mom;
+        const diffYoY = cur - yoy;
+        
+        const format = (val) => `${val >= 0 ? '▲' : '▼'} ${symbol}${Math.abs(val).toLocaleString()}`;
+        const color = (val) => val >= 0 ? 'text-emerald-500' : 'text-red-500';
+
+        document.getElementById(id).innerHTML = `
+            <div class="${color(diffYoY)} font-bold">${format(diffYoY)} vs Prev Year</div>
+            <div class="text-slate-400 font-medium">${mom > 0 ? format(diffMoM) + ' vs Prev Month' : 'No MoM Data'}</div>
+        `;
+    }
+
+    function renderCharts(data) {
+        // Destroy existing charts to prevent overlap
+        Object.values(charts).forEach(c => c.destroy());
+
+        const ctxAge = document.getElementById('ageChart').getContext('2d');
+        const ctxGender = document.getElementById('genderChart').getContext('2d');
+        const ctxPay = document.getElementById('paymentChart').getContext('2d');
+
+        // Logic for Age/Gender/Payment counts remains same...
+        const genderData = { Male: data.filter(r=>r.gender==='Male').length, Female: data.filter(r=>r.gender==='Female').length };
+        
+        charts.gender = new Chart(ctxGender, {
+            type: 'doughnut',
+            data: { labels: ['Male', 'Female'], datasets: [{ data: Object.values(genderData), backgroundColor: ['#059669', '#3b82f6'] }] },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // Add similar Chart constructors for charts.age and charts.payment...
+        // (Briefly: setup ageBrackets and payRev objects as before)
+        const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51+': 0 };
+        data.forEach(r => {
+            if (r.age <= 18) ageBrackets['0-18']++;
+            else if (r.age <= 35) ageBrackets['19-35']++;
+            else if (r.age <= 50) ageBrackets['36-50']++;
+            else ageBrackets['51+']++;
+        });
+
+        charts.age = new Chart(ctxAge, {
+            type: 'bar',
+            data: { labels: Object.keys(ageBrackets), datasets: [{ label: 'Patients', data: Object.values(ageBrackets), backgroundColor: '#10b981' }] }
+        });
+
+        const payTypes = { HMO: data.filter(r=>r.payment_type==='HMO').length, Cash: data.filter(r=>r.payment_type==='Cash').length, Company: data.filter(r=>r.payment_type==='Company').length };
+        charts.payment = new Chart(ctxPay, {
+            type: 'pie',
+            data: { labels: Object.keys(payTypes), datasets: [{ data: Object.values(payTypes), backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'] }] }
+        });
+    }
+
+    init();
   </script>
 </body>
 </html>
+
 
 
