@@ -90,8 +90,7 @@
   </main>
 
   <script>
-    
-  // --- SUPABASE & REPORTS LOGIC ---
+    // --- SUPABASE & REPORTS LOGIC ---
 {
   const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
   const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
@@ -110,73 +109,84 @@
         return;
       }
 
-      // --- GROUP DATA BY MONTH-YEAR ---
-      const dec2024 = data.filter(r =>
-        new Date(r.date).getFullYear() === 2024 &&
-        new Date(r.date).getMonth() === 11 // December is 11 in JS
-      );
+      // --- DATE AGGREGATION ---
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
 
-      const dec2025 = data.filter(r =>
-        new Date(r.date).getFullYear() === 2025 &&
-        new Date(r.date).getMonth() === 11
-      );
+      // Filter for December 2025 (Current Period for your test)
+      const dec2025 = data.filter(r => {
+        const d = new Date(r.date);
+        return d.getFullYear() === 2025 && d.getMonth() === 11;
+      });
 
-      // Safety check: ensure both datasets exist for comparison
-      if (!dec2024.length || !dec2025.length) {
-        document.getElementById('loadingState').innerHTML = 
-          `<div class="text-orange-400">Variance requires Dec 2024 and Dec 2025 data.<br>
-          <span class="text-xs">Found: Dec 2024 (${dec2024.length}) | Dec 2025 (${dec2025.length})</span></div>`;
-        return;
-      }
+      // Filter for December 2024 (Year-to-Year Comparison)
+      const dec2024 = data.filter(r => {
+        const d = new Date(r.date);
+        return d.getFullYear() === 2024 && d.getMonth() === 11;
+      });
 
-      function metrics(records) {
+      // Filter for November 2025 (Month-to-Month Comparison)
+      const nov2025 = data.filter(r => {
+        const d = new Date(r.date);
+        return d.getFullYear() === 2025 && d.getMonth() === 10;
+      });
+
+      function getStats(records) {
         const total = records.reduce((s, r) => s + (r.amount || 0), 0);
-        const census = records.length;
-        return {
-          total,
-          census,
-          avg: total / census,
-          max: Math.max(...records.map(r => r.amount || 0))
-        };
+        return { total, census: records.length };
       }
 
-      const m2024 = metrics(dec2024);
-      const m2025 = metrics(dec2025);
+      const mCurrent = getStats(dec2025);
+      const mPrevYear = getStats(dec2024);
+      const mPrevMonth = getStats(nov2025);
 
-      // --- CALCULATE VARIANCES ---
-      const revVariance = m2025.total - m2024.total;
-      const censusVariance = m2025.census - m2024.census;
-      const avgVariance = m2025.avg - m2024.avg;
-      const maxVariance = m2025.max - m2024.max;
+      // --- UPDATE KPI CARDS (DEC 2025 DATA) ---
+      document.getElementById('totalRevenue').innerText = `₱${mCurrent.total.toLocaleString()}`;
+      document.getElementById('totalCensus').innerText = mCurrent.census;
+      
+      const avg = mCurrent.total / (mCurrent.census || 1);
+      document.getElementById('avgRevenue').innerText = `₱${avg.toLocaleString(undefined, {maximumFractionDigits:0})}`;
+      
+      const max = Math.max(...dec2025.map(r => r.amount || 0), 0);
+      document.getElementById('maxBill').innerText = `₱${max.toLocaleString()}`;
 
-      // --- UPDATE PRIMARY DISPLAYS (Current Month: Dec 2025) ---
-      document.getElementById('totalRevenue').innerText = `₱${m2025.total.toLocaleString()}`;
-      document.getElementById('totalCensus').innerText = m2025.census;
-      document.getElementById('avgRevenue').innerText = `₱${m2025.avg.toLocaleString(undefined, {maximumFractionDigits:0})}`;
-      document.getElementById('maxBill').innerText = `₱${m2025.max.toLocaleString()}`;
+      // --- REVENUE VARIANCE (Month-to-Month & Year-to-Year) ---
+      const revYoY = mCurrent.total - mPrevYear.total;
+      const revMoM = mCurrent.total - mPrevMonth.total;
 
-      // --- UPDATE VARIANCE LABELS ---
-      // Revenue Variance
-      document.getElementById('revVar').innerHTML =
-        revVariance >= 0
-          ? `<span class="text-emerald-500">▲ ₱${revVariance.toLocaleString()} vs Dec 2024</span>`
-          : `<span class="text-red-500">▼ ₱${Math.abs(revVariance).toLocaleString()} vs Dec 2024</span>`;
+      document.getElementById('revVar').innerHTML = `
+        <div class="flex flex-col gap-1 mt-2">
+          <span class="${revYoY >= 0 ? 'text-emerald-300' : 'text-red-300'}">
+            ${revYoY >= 0 ? '▲' : '▼'} ₱${Math.abs(revYoY).toLocaleString()} vs Dec 2024 (YoY)
+          </span>
+          <span class="text-[9px] opacity-70">
+            ${revMoM >= 0 ? '▲' : '▼'} ₱${Math.abs(revMoM).toLocaleString()} vs Nov 2025 (MoM)
+          </span>
+        </div>
+      `;
 
-      // Highest Bill Variance
-      document.getElementById('maxVar').innerHTML =
-        maxVariance >= 0
-          ? `<span class="text-emerald-500">▲ ₱${maxVariance.toLocaleString()} vs Dec 2024</span>`
-          : `<span class="text-red-500">▼ ₱${Math.abs(maxVariance).toLocaleString()} vs Dec 2024</span>`;
+      // --- CENSUS VARIANCE ---
+      const cenYoY = mCurrent.census - mPrevYear.census;
+      const cenMoM = mCurrent.census - mPrevMonth.census;
 
-      // Optional: Add hidden placeholders for Census/Avg variance if you want them visible
-      // (Requires adding <p id="censusVar"> and <p id="avgVar"> to your HTML cards)
+      // Ensure you have an element with ID 'censusVar' in your HTML
+      const censusVarEl = document.getElementById('censusVar') || document.createElement('p');
+      censusVarEl.id = "censusVar";
+      censusVarEl.className = "text-[10px] mt-2 font-bold";
+      censusVarEl.innerHTML = `
+        <span class="${cenYoY >= 0 ? 'text-emerald-500' : 'text-red-500'}">
+          ${cenYoY >= 0 ? '▲' : '▼'} ${Math.abs(cenYoY)} vs Dec '24
+        </span>
+      `;
+      document.getElementById('totalCensus').parentNode.appendChild(censusVarEl);
 
-      // --- PREPARE CHARTS FOR DEC 2025 ---
+      // --- PREPARE CHARTS (USING ALL DATA) ---
       const genderCounts = { Male: 0, Female: 0, Other: 0 };
       const payRev = { HMO: 0, Cash: 0, Company: 0 };
       const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
 
-      dec2025.forEach(r => {
+      data.forEach(r => {
         if (genderCounts[r.gender] !== undefined) genderCounts[r.gender]++;
         if (payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0);
         const a = r.age;
@@ -190,19 +200,48 @@
       document.getElementById('loadingState').classList.add('hidden');
       document.getElementById('reportContent').classList.remove('hidden');
 
-      // Initialize Charts... (Keeping your existing Chart.js code)
-      new Chart(document.getElementById('genderChart'), { /* ... same as before ... */ });
-      new Chart(document.getElementById('paymentChart'), { /* ... same as before ... */ });
-      new Chart(document.getElementById('ageChart'), { /* ... same as before ... */ });
+      // --- RENDER CHARTS ---
+      new Chart(document.getElementById('genderChart'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(genderCounts),
+          datasets: [{ data: Object.values(genderCounts), backgroundColor: ['#059669', '#3b82f6', '#cbd5e1'], borderWeight: 0 }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+
+      new Chart(document.getElementById('paymentChart'), {
+        type: 'pie',
+        data: {
+          labels: Object.keys(payRev),
+          datasets: [{ data: Object.values(payRev), backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'], borderWeight: 0 }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+
+      new Chart(document.getElementById('ageChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(ageBrackets),
+          datasets: [{ label: 'Patients', data: Object.values(ageBrackets), backgroundColor: '#10b981', borderRadius: 10 }]
+        },
+        options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
 
     } catch (err) {
       console.error(err);
-      document.getElementById('loadingState').innerHTML = `<span class="text-red-500">Error: ${err.message}</span>`;
+      document.getElementById('loadingState').innerText = "Error: " + err.message;
     }
   }
   loadReports();
+
+  window.logout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "index.html";
+  };
 }
   </script>
 </body>
 </html>
+
 
