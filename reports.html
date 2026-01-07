@@ -9,9 +9,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: #1e293b; min-height: 100vh; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: #1e293b; min-height: 100vh; overflow-x: hidden; }
     #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
-    .glass-nav { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-nav { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
     .glass-card { background: rgba(255, 255, 255, 0.9); border: 1px solid #e2e8f0; border-radius: 2rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
     .glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
     .emerald-gradient { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
@@ -28,29 +28,28 @@
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 emerald-gradient rounded-xl flex items-center justify-center shadow-lg">
-          <svg class="text-white w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <svg class="text-white w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-width="2.5"/></svg>
         </div>
         <h1 class="font-extrabold text-xl tracking-tight text-white">Clinical Insights</h1>
       </div>
-      
       <div class="hidden md:flex items-center gap-8">
         <a href="home.html" class="nav-link">Home</a>
         <a href="dashboard.html" class="nav-link">Records</a>
         <a href="reports.html" class="nav-link nav-active pb-1">Reports</a>
       </div>
-
       <button onclick="logout()" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-red-500/20 transition">Logout</button>
     </div>
   </nav>
-<main class="max-w-7xl mx-auto p-6 lg:p-10">
+
+  <main class="max-w-7xl mx-auto p-6 lg:p-10">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
             <h2 class="text-white text-2xl font-black uppercase tracking-tight">Clinical Performance</h2>
             <p id="periodLabel" class="text-emerald-400 text-xs font-bold uppercase tracking-widest"></p>
         </div>
         <div class="flex gap-4">
-            <select id="doctorFilter" onchange="updateDashboard()" class="bg-white/10 border border-white/20 text-white text-xs font-bold py-2 px-4 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="all">All Doctors</option>
+            <select id="doctorFilter" onchange="updateDashboard()" class="bg-white/10 border border-white/20 text-white text-xs font-bold py-2 px-4 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                <option value="all" class="text-black">All Doctors</option>
             </select>
         </div>
     </div>
@@ -98,9 +97,44 @@
             </div>
         </div>
     </div>
-</main>
+  </main>
 
-<script>
+  <script>
+    // --- MOLECULE BACKGROUND ANIMATION ---
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let molecules = [];
+    class Molecule {
+      constructor() { this.init(); }
+      init() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.7; this.vy = (Math.random() - 0.5) * 0.7;
+        this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.01;
+        this.scale = Math.random() * 0.5 + 0.5;
+        this.structure = [{x:0,y:0,r:6,c:'rgba(255,255,255,0.15)'},{x:25,y:0,r:4,c:'rgba(255,255,255,0.1)'},{x:-15,y:20,r:4,c:'rgba(255,255,255,0.1)'}];
+        this.bonds = [[0,1],[0,2]];
+      }
+      draw() {
+        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y); ctx.stroke(); });
+        this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI*2); ctx.fillStyle = a.c; ctx.fill(); });
+        ctx.restore();
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+        if(this.x > canvas.width+100) this.x = -100; else if(this.x < -100) this.x = canvas.width+100;
+        if(this.y > canvas.height+100) this.y = -100; else if(this.y < -100) this.y = canvas.height+100;
+      }
+    }
+    function initBG() { 
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      molecules = []; for(let i=0; i<20; i++) molecules.push(new Molecule());
+    }
+    function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=>{m.update(); m.draw();}); requestAnimationFrame(animate); }
+    window.addEventListener('resize', initBG); initBG(); animate();
+
+    // --- DASHBOARD LOGIC ---
     let globalData = [];
     let charts = {};
 
@@ -110,36 +144,46 @@
     );
 
     async function init() {
-        const { data, error } = await supabase.from('patient_records').select('*');
-        if (error || !data) return;
-        globalData = data;
+        try {
+            const { data, error } = await supabase.from('patient_records').select('*');
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                document.getElementById('loadingState').innerText = "No data found in database.";
+                return;
+            }
+            globalData = data;
 
-        // Populate Doctor Filter
-        const doctors = [...new Set(data.map(r => r.doctor_name))];
-        const select = document.getElementById('doctorFilter');
-        doctors.forEach(doc => {
-            const opt = document.createElement('option');
-            opt.value = doc; opt.textContent = doc;
-            select.appendChild(opt);
-        });
+            // Populate Doctor Filter
+            const doctors = [...new Set(data.map(r => r.doctor_name))].filter(Boolean);
+            const select = document.getElementById('doctorFilter');
+            doctors.forEach(doc => {
+                const opt = document.createElement('option');
+                opt.value = doc; opt.textContent = doc; opt.className = "text-black";
+                select.appendChild(opt);
+            });
 
-        updateDashboard();
+            updateDashboard();
+        } catch (err) {
+            console.error("Init Error:", err);
+            document.getElementById('loadingState').innerHTML = `<span class="text-red-500 text-sm">Error syncing: ${err.message}</span>`;
+        }
     }
 
     function updateDashboard() {
         const docFilter = document.getElementById('doctorFilter').value;
         const filteredData = docFilter === 'all' ? globalData : globalData.filter(r => r.doctor_name === docFilter);
 
+        if (filteredData.length === 0) return;
+
         // 1. Dynamic Date Detection
-        const dates = filteredData.map(r => new Date(r.date));
+        const dates = filteredData.map(r => new Date(r.date)).filter(d => !isNaN(d));
         const latestDate = new Date(Math.max(...dates));
         const currentMonth = latestDate.getMonth();
         const currentYear = latestDate.getFullYear();
 
-        const monthName = latestDate.toLocaleString('default', { month: 'long' });
-        document.getElementById('periodLabel').innerText = `Reporting Period: ${monthName} ${currentYear}`;
+        document.getElementById('periodLabel').innerText = `Reporting Period: ${latestDate.toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
-        // 2. Filter Periods for Variance
+        // 2. Filter Periods
         const currentPeriod = filteredData.filter(r => {
             const d = new Date(r.date);
             return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -147,9 +191,9 @@
 
         const prevMonthPeriod = filteredData.filter(r => {
             const d = new Date(r.date);
-            const targetMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-            const targetYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-            return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+            const targetM = currentMonth === 0 ? 11 : currentMonth - 1;
+            const targetY = currentMonth === 0 ? currentYear - 1 : currentYear;
+            return d.getMonth() === targetM && d.getFullYear() === targetY;
         });
 
         const prevYearPeriod = filteredData.filter(r => {
@@ -157,21 +201,20 @@
             return d.getMonth() === currentMonth && d.getFullYear() === (currentYear - 1);
         });
 
-        // 3. Calculate Stats
-        const sum = (arr) => arr.reduce((acc, r) => acc + (r.amount || 0), 0);
-        
+        // 3. Stats
+        const sum = (arr) => arr.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
         const curTotal = sum(currentPeriod);
-        const prevMTotal = sum(prevMonthPeriod);
-        const prevYTotal = sum(prevYearPeriod);
-
-        // 4. UI Update
+        
+        // 4. Update UI
         document.getElementById('totalRevenue').innerText = `₱${curTotal.toLocaleString()}`;
         document.getElementById('totalCensus').innerText = currentPeriod.length;
         document.getElementById('avgRevenue').innerText = `₱${(curTotal / (currentPeriod.length || 1)).toLocaleString(undefined, {maximumFractionDigits:0})}`;
-        document.getElementById('maxBill').innerText = `₱${Math.max(...currentPeriod.map(r => r.amount || 0), 0).toLocaleString()}`;
+        
+        const maxAmt = currentPeriod.length > 0 ? Math.max(...currentPeriod.map(r => Number(r.amount) || 0)) : 0;
+        document.getElementById('maxBill').innerText = `₱${maxAmt.toLocaleString()}`;
 
-        // 5. Dynamic Variance Labels
-        updateVariance('revVar', curTotal, prevMTotal, prevYTotal, '₱');
+        // 5. Variances
+        updateVariance('revVar', curTotal, sum(prevMonthPeriod), sum(prevYearPeriod), '₱');
         updateVariance('censusVar', currentPeriod.length, prevMonthPeriod.length, prevYearPeriod.length, '');
 
         document.getElementById('loadingState').classList.add('hidden');
@@ -183,59 +226,55 @@
     function updateVariance(id, cur, mom, yoy, symbol) {
         const diffMoM = cur - mom;
         const diffYoY = cur - yoy;
-        
         const format = (val) => `${val >= 0 ? '▲' : '▼'} ${symbol}${Math.abs(val).toLocaleString()}`;
         const color = (val) => val >= 0 ? 'text-emerald-500' : 'text-red-500';
 
         document.getElementById(id).innerHTML = `
             <div class="${color(diffYoY)} font-bold">${format(diffYoY)} vs Prev Year</div>
-            <div class="text-slate-400 font-medium">${mom > 0 ? format(diffMoM) + ' vs Prev Month' : 'No MoM Data'}</div>
+            <div class="text-slate-400 font-medium text-[8px]">${mom > 0 ? format(diffMoM) + ' vs Prev Month' : 'No MoM Data'}</div>
         `;
     }
 
     function renderCharts(data) {
-        // Destroy existing charts to prevent overlap
         Object.values(charts).forEach(c => c.destroy());
 
-        const ctxAge = document.getElementById('ageChart').getContext('2d');
-        const ctxGender = document.getElementById('genderChart').getContext('2d');
-        const ctxPay = document.getElementById('paymentChart').getContext('2d');
-
-        // Logic for Age/Gender/Payment counts remains same...
-        const genderData = { Male: data.filter(r=>r.gender==='Male').length, Female: data.filter(r=>r.gender==='Female').length };
-        
-        charts.gender = new Chart(ctxGender, {
+        // Gender Chart
+        const genM = data.filter(r => r.gender === 'Male').length;
+        const genF = data.filter(r => r.gender === 'Female').length;
+        charts.gender = new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
-            data: { labels: ['Male', 'Female'], datasets: [{ data: Object.values(genderData), backgroundColor: ['#059669', '#3b82f6'] }] },
-            options: { plugins: { legend: { position: 'bottom' } } }
+            data: { labels: ['Male', 'Female'], datasets: [{ data: [genM, genF], backgroundColor: ['#0ea5e9', '#ec4899'], borderWidth: 0 }] },
+            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
         });
 
-        // Add similar Chart constructors for charts.age and charts.payment...
-        // (Briefly: setup ageBrackets and payRev objects as before)
-        const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51+': 0 };
+        // Age Chart
+        const ageB = { '0-18': 0, '19-35': 0, '36-50': 0, '51+': 0 };
         data.forEach(r => {
-            if (r.age <= 18) ageBrackets['0-18']++;
-            else if (r.age <= 35) ageBrackets['19-35']++;
-            else if (r.age <= 50) ageBrackets['36-50']++;
-            else ageBrackets['51+']++;
+            const a = Number(r.age);
+            if (a <= 18) ageB['0-18']++; else if (a <= 35) ageB['19-35']++; else if (a <= 50) ageB['36-50']++; else ageB['51+']++;
         });
-
-        charts.age = new Chart(ctxAge, {
+        charts.age = new Chart(document.getElementById('ageChart'), {
             type: 'bar',
-            data: { labels: Object.keys(ageBrackets), datasets: [{ label: 'Patients', data: Object.values(ageBrackets), backgroundColor: '#10b981' }] }
+            data: { labels: Object.keys(ageB), datasets: [{ label: 'Patients', data: Object.values(ageB), backgroundColor: '#10b981', borderRadius: 8 }] },
+            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
 
-        const payTypes = { HMO: data.filter(r=>r.payment_type==='HMO').length, Cash: data.filter(r=>r.payment_type==='Cash').length, Company: data.filter(r=>r.payment_type==='Company').length };
-        charts.payment = new Chart(ctxPay, {
+        // Payment Chart
+        const pTypes = { HMO: 0, Cash: 0, Company: 0 };
+        data.forEach(r => { if(pTypes[r.payment_type] !== undefined) pTypes[r.payment_type]++; });
+        charts.payment = new Chart(document.getElementById('paymentChart'), {
             type: 'pie',
-            data: { labels: Object.keys(payTypes), datasets: [{ data: Object.values(payTypes), backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'] }] }
+            data: { labels: Object.keys(pTypes), datasets: [{ data: Object.values(pTypes), backgroundColor: ['#6366f1', '#f59e0b', '#10b981'], borderWidth: 0 }] },
+            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
         });
+    }
+
+    async function logout() {
+        await supabase.auth.signOut();
+        window.location.href = "index.html";
     }
 
     init();
   </script>
 </body>
 </html>
-
-
-
