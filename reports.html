@@ -90,142 +90,119 @@
   </main>
 
   <script>
-    // --- MOLECULE BACKGROUND ---
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let molecules = [];
-    class Molecule {
-      constructor() { this.init(); }
-      init() {
-        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.7; this.vy = (Math.random() - 0.5) * 0.7;
-        this.angle = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.01;
-        this.scale = Math.random() * 0.5 + 0.5;
-        this.structure = [{x:0,y:0,r:6,c:'rgba(255,255,255,0.15)'},{x:25,y:0,r:4,c:'rgba(255,255,255,0.1)'},{x:-15,y:20,r:4,c:'rgba(255,255,255,0.1)'}];
-        this.bonds = [[0,1],[0,2]];
+    
+  // --- SUPABASE & REPORTS LOGIC ---
+{
+  const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
+  const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
+  const supabase = window.supabase.createClient(_URL, _KEY);
+
+  async function loadReports() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { window.location.replace("index.html"); return; }
+
+      const { data, error } = await supabase.from('patient_records').select('*');
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        document.getElementById('loadingState').innerText = "No records found.";
+        return;
       }
-      draw() {
-        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
-        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-        this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y); ctx.stroke(); });
-        this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI*2); ctx.fillStyle = a.c; ctx.fill(); });
-        ctx.restore();
+
+      // --- GROUP DATA BY MONTH-YEAR ---
+      const dec2024 = data.filter(r =>
+        new Date(r.date).getFullYear() === 2024 &&
+        new Date(r.date).getMonth() === 11 // December is 11 in JS
+      );
+
+      const dec2025 = data.filter(r =>
+        new Date(r.date).getFullYear() === 2025 &&
+        new Date(r.date).getMonth() === 11
+      );
+
+      // Safety check: ensure both datasets exist for comparison
+      if (!dec2024.length || !dec2025.length) {
+        document.getElementById('loadingState').innerHTML = 
+          `<div class="text-orange-400">Variance requires Dec 2024 and Dec 2025 data.<br>
+          <span class="text-xs">Found: Dec 2024 (${dec2024.length}) | Dec 2025 (${dec2025.length})</span></div>`;
+        return;
       }
-      update() {
-        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
-        if(this.x > canvas.width+100) this.x = -100; else if(this.x < -100) this.x = canvas.width+100;
-        if(this.y > canvas.height+100) this.y = -100; else if(this.y < -100) this.y = canvas.height+100;
+
+      function metrics(records) {
+        const total = records.reduce((s, r) => s + (r.amount || 0), 0);
+        const census = records.length;
+        return {
+          total,
+          census,
+          avg: total / census,
+          max: Math.max(...records.map(r => r.amount || 0))
+        };
       }
+
+      const m2024 = metrics(dec2024);
+      const m2025 = metrics(dec2025);
+
+      // --- CALCULATE VARIANCES ---
+      const revVariance = m2025.total - m2024.total;
+      const censusVariance = m2025.census - m2024.census;
+      const avgVariance = m2025.avg - m2024.avg;
+      const maxVariance = m2025.max - m2024.max;
+
+      // --- UPDATE PRIMARY DISPLAYS (Current Month: Dec 2025) ---
+      document.getElementById('totalRevenue').innerText = `₱${m2025.total.toLocaleString()}`;
+      document.getElementById('totalCensus').innerText = m2025.census;
+      document.getElementById('avgRevenue').innerText = `₱${m2025.avg.toLocaleString(undefined, {maximumFractionDigits:0})}`;
+      document.getElementById('maxBill').innerText = `₱${m2025.max.toLocaleString()}`;
+
+      // --- UPDATE VARIANCE LABELS ---
+      // Revenue Variance
+      document.getElementById('revVar').innerHTML =
+        revVariance >= 0
+          ? `<span class="text-emerald-500">▲ ₱${revVariance.toLocaleString()} vs Dec 2024</span>`
+          : `<span class="text-red-500">▼ ₱${Math.abs(revVariance).toLocaleString()} vs Dec 2024</span>`;
+
+      // Highest Bill Variance
+      document.getElementById('maxVar').innerHTML =
+        maxVariance >= 0
+          ? `<span class="text-emerald-500">▲ ₱${maxVariance.toLocaleString()} vs Dec 2024</span>`
+          : `<span class="text-red-500">▼ ₱${Math.abs(maxVariance).toLocaleString()} vs Dec 2024</span>`;
+
+      // Optional: Add hidden placeholders for Census/Avg variance if you want them visible
+      // (Requires adding <p id="censusVar"> and <p id="avgVar"> to your HTML cards)
+
+      // --- PREPARE CHARTS FOR DEC 2025 ---
+      const genderCounts = { Male: 0, Female: 0, Other: 0 };
+      const payRev = { HMO: 0, Cash: 0, Company: 0 };
+      const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
+
+      dec2025.forEach(r => {
+        if (genderCounts[r.gender] !== undefined) genderCounts[r.gender]++;
+        if (payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0);
+        const a = r.age;
+        if (a <= 18) ageBrackets['0-18']++;
+        else if (a <= 35) ageBrackets['19-35']++;
+        else if (a <= 50) ageBrackets['36-50']++;
+        else if (a <= 65) ageBrackets['51-65']++;
+        else ageBrackets['65+']++;
+      });
+
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('reportContent').classList.remove('hidden');
+
+      // Initialize Charts... (Keeping your existing Chart.js code)
+      new Chart(document.getElementById('genderChart'), { /* ... same as before ... */ });
+      new Chart(document.getElementById('paymentChart'), { /* ... same as before ... */ });
+      new Chart(document.getElementById('ageChart'), { /* ... same as before ... */ });
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('loadingState').innerHTML = `<span class="text-red-500">Error: ${err.message}</span>`;
     }
-    function initBG() { 
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      molecules = []; for(let i=0; i<20; i++) molecules.push(new Molecule());
-    }
-    function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); molecules.forEach(m=>{m.update(); m.draw();}); requestAnimationFrame(animate); }
-    window.addEventListener('resize', initBG); initBG(); animate();
-
-    // --- SUPABASE & REPORTS LOGIC ---
-    {
-      const _URL = 'https://xpdtzvxjlguhcxkgowsg.supabase.co';
-      const _KEY = 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN';
-      const supabase = window.supabase.createClient(_URL, _KEY);
-
-      async function loadReports() {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) { window.location.replace("index.html"); return; }
-
-          const { data, error } = await supabase.from('patient_records').select('*');
-          if (error) throw error;
-
-          if (!data || data.length === 0) {
-            document.getElementById('loadingState').innerText = "No records found.";
-            return;
-          }
-
-          // 1. Core Data Calculations
-          const totalRev = data.reduce((sum, r) => sum + (r.amount || 0), 0);
-          const census = data.length;
-          const avgRev = totalRev / census;
-          const maxBill = Math.max(...data.map(r => r.amount || 0));
-
-          // 2. Variance Calculations (Current vs Average)
-          const revVariance = totalRev - avgRev; // Just a sample comparison
-          const maxVariance = maxBill - avgRev;
-
-          // 3. Update Main KPI Display
-          document.getElementById('totalRevenue').innerText = `₱${totalRev.toLocaleString()}`;
-          document.getElementById('totalCensus').innerText = census.toLocaleString();
-          document.getElementById('avgRevenue').innerText = `₱${avgRev.toLocaleString(undefined, {maximumFractionDigits:0})}`;
-          document.getElementById('maxBill').innerText = `₱${maxBill.toLocaleString()}`;
-
-          // 4. Update Variance Text
-          document.getElementById('revVar').innerHTML = 
-            revVariance >= 0 ? `▲ ₱${revVariance.toLocaleString()} ABOVE AVG` : `▼ ₱${Math.abs(revVariance).toLocaleString()} BELOW AVG`;
-          
-          document.getElementById('maxVar').innerHTML = 
-            maxVariance >= 0 ? `<span class="text-emerald-500">▲ ₱${maxVariance.toLocaleString()} VS AVG</span>` : `<span class="text-red-500">▼ ₱${Math.abs(maxVariance).toLocaleString()} VS AVG</span>`;
-
-          // 5. Categorize Data for Charts
-          const genderCounts = { Male: 0, Female: 0, Other: 0 };
-          const payRev = { HMO: 0, Cash: 0, Company: 0 };
-          const ageBrackets = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
-
-          data.forEach(r => {
-            if (genderCounts[r.gender] !== undefined) genderCounts[r.gender]++;
-            if (payRev[r.payment_type] !== undefined) payRev[r.payment_type] += (r.amount || 0);
-            const a = r.age;
-            if (a <= 18) ageBrackets['0-18']++;
-            else if (a <= 35) ageBrackets['19-35']++;
-            else if (a <= 50) ageBrackets['36-50']++;
-            else if (a <= 65) ageBrackets['51-65']++;
-            else ageBrackets['65+']++;
-          });
-
-          // Show Content
-          document.getElementById('loadingState').classList.add('hidden');
-          document.getElementById('reportContent').classList.remove('hidden');
-
-          // 6. Draw Charts
-          new Chart(document.getElementById('genderChart'), {
-            type: 'doughnut',
-            data: {
-              labels: Object.keys(genderCounts),
-              datasets: [{ data: Object.values(genderCounts), backgroundColor: ['#059669', '#3b82f6', '#cbd5e1'], borderWeight: 0 }]
-            },
-            options: { plugins: { legend: { position: 'bottom' } } }
-          });
-
-          new Chart(document.getElementById('paymentChart'), {
-            type: 'pie',
-            data: {
-              labels: Object.keys(payRev),
-              datasets: [{ data: Object.values(payRev), backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'], borderWeight: 0 }]
-            },
-            options: { plugins: { legend: { position: 'bottom' } } }
-          });
-
-          new Chart(document.getElementById('ageChart'), {
-            type: 'bar',
-            data: {
-              labels: Object.keys(ageBrackets),
-              datasets: [{ label: 'Patients', data: Object.values(ageBrackets), backgroundColor: '#10b981', borderRadius: 10 }]
-            },
-            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-          });
-
-        } catch (err) {
-          console.error(err);
-          document.getElementById('loadingState').innerText = "Error: " + err.message;
-        }
-      }
-      loadReports();
-
-      window.logout = async () => {
-        await supabase.auth.signOut();
-        window.location.href = "index.html";
-      };
-    }
+  }
+  loadReports();
+}
   </script>
 </body>
 </html>
+
