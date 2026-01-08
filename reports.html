@@ -19,8 +19,9 @@
     .nav-link:hover { color: white; }
     .nav-active { color: #10b981; border-bottom: 2px solid #10b981; }
     
-    .month-list { border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; overflow: hidden; }
-    .month-btn { width: 100%; text-align: left; padding: 8px 15px; font-size: 13px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.2s; color: rgba(255,255,255,0.7); }
+    .month-list { border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.3); }
+    .month-btn { width: 100%; text-align: left; padding: 10px 15px; font-size: 13px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.2s; color: rgba(255,255,255,0.7); }
+    .month-btn:hover { background: rgba(255,255,255,0.1); color: white; }
     .month-btn.active { background: white; color: #022c22; }
   </style>
 </head>
@@ -41,14 +42,16 @@
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-10">
-    <div id="loadingState" class="text-center py-20 text-emerald-400 font-bold animate-pulse">Syncing Database...</div>
+    <div id="loadingState" class="text-center py-20 text-emerald-400 font-bold animate-pulse text-xl">
+        Attempting to connect to Clinical Database...
+    </div>
 
     <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div class="lg:col-span-1 space-y-6">
-            <div class="month-list backdrop-blur-md bg-black/20" id="monthPicker"></div>
+            <div class="month-list" id="monthPicker"></div>
             <div class="metric-card bg-opacity-60 backdrop-blur-md">
                 <label class="text-[10px] uppercase font-bold text-slate-400 mb-3 block">Filter by Doctor</label>
-                <select id="doctorFilter" onchange="updateDashboard()" class="w-full bg-white/10 border border-white/20 text-white text-sm p-3 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                <select id="doctorFilter" onchange="updateDashboard()" class="w-full bg-white/10 border border-white/20 text-white text-sm p-3 rounded-xl outline-none">
                     <option value="all">All Personnel</option>
                 </select>
             </div>
@@ -61,37 +64,33 @@
                         <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest" id="monthLabelHeader">Month</p>
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
-                                <span class="text-slate-500 font-bold year-latest-label">Latest</span>
+                                <span class="text-slate-500 font-bold year-latest-label">Latest Year</span>
                                 <span class="text-2xl font-black text-white" id="valCurrentYear">₱0.00</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-slate-500 font-bold year-prev-label">Previous</span>
+                                <span class="text-slate-500 font-bold year-prev-label">Prev Year</span>
                                 <span class="text-xl font-bold text-slate-300" id="valPrevYear">₱0.00</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col justify-center items-end">
-                        <div id="revVariance" class="flex items-center gap-2"></div>
-                    </div>
+                    <div class="flex flex-col justify-center items-end" id="revVariance"></div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-8">
                     <div>
-                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">Yearly Comparison</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">Census Comparison</p>
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
-                                <span class="text-slate-500 font-bold year-latest-label">Latest</span>
+                                <span class="text-slate-500 font-bold year-latest-label">Latest Year</span>
                                 <span class="text-2xl font-black text-white" id="valTotalCurrent">0</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-slate-500 font-bold year-prev-label">Previous</span>
+                                <span class="text-slate-500 font-bold year-prev-label">Prev Year</span>
                                 <span class="text-xl font-bold text-slate-300" id="valTotalPrev">0</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col justify-center items-end">
-                        <div id="yoyVariance" class="flex items-center gap-2"></div>
-                    </div>
+                    <div class="flex flex-col justify-center items-end" id="yoyVariance"></div>
                 </div>
             </div>
 
@@ -104,41 +103,57 @@
   </main>
 
   <script>
-    // BG logic remains same...
+    // Molecule BG logic
     const canvas=document.getElementById('bg-canvas');const ctx=canvas.getContext('2d');let molecules=[];class Molecule{constructor(){this.init()}init(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*.7;this.vy=(Math.random()-.5)*.7;this.angle=Math.random()*Math.PI*2;this.scale=Math.random()*.5+.5;this.structure=[{x:0,y:0,r:6,c:'rgba(255,255,255,0.15)'},{x:25,y:0,r:4,c:'rgba(255,255,255,0.1)'},{x:-15,y:20,r:4,c:'rgba(255,255,255,0.1)'}];this.bonds=[[0,1],[0,2]]}draw(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);ctx.scale(this.scale,this.scale);ctx.strokeStyle='rgba(255,255,255,0.05)';this.bonds.forEach(b=>{ctx.beginPath();ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y);ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y);ctx.stroke()});this.structure.forEach(a=>{ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fillStyle=a.c;ctx.fill()});ctx.restore()}update(){this.x+=this.vx;this.y+=this.vy;if(this.x>canvas.width+100||this.x<-100)this.vx*=-1;if(this.y>canvas.height+100||this.y<-100)this.vy*=-1}}function initBG(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;molecules=[];for(let i=0;i<15;i++)molecules.push(new Molecule())}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);molecules.forEach(m=>{m.update();m.draw()});requestAnimationFrame(animate)}window.addEventListener('resize',initBG);initBG();animate();
 
+    // DASHBOARD LOGIC
     let globalData = [];
     let latestYear, prevYear;
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     let activeMonthIndex = new Date().getMonth();
+    
+    // Supabase Init
     const db = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co','sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
 
     async function init() {
-        const { data, error } = await db.from('patient_records').select('*');
-        if (error) { console.error(error); return; }
-        globalData = data || [];
-        
-        // --- DYNAMIC YEAR DETECTION ---
-        const years = [...new Set(globalData.map(r => new Date(r.date).getFullYear()))].sort((a,b) => b-a);
-        latestYear = years[0] || new Date().getFullYear();
-        prevYear = latestYear - 1;
+        try {
+            const { data, error } = await db.from('patient_records').select('*');
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                document.getElementById('loadingState').innerText = "No data found in database.";
+                return;
+            }
+            
+            globalData = data;
 
-        // Update Labels
-        document.querySelectorAll('.year-latest-label').forEach(el => el.innerText = latestYear);
-        document.querySelectorAll('.year-prev-label').forEach(el => el.innerText = prevYear);
+            // --- DETECT YEARS FROM DATA ---
+            const availableYears = [...new Set(globalData.map(r => new Date(r.date).getFullYear()))].sort((a,b) => b-a);
+            latestYear = availableYears[0];
+            prevYear = availableYears.length > 1 ? availableYears[1] : latestYear - 1;
 
-        const doctors = [...new Set(globalData.map(r => r.doctor_name))].filter(Boolean);
-        const select = document.getElementById('doctorFilter');
-        doctors.forEach(doc => {
-            const opt = document.createElement('option');
-            opt.value = doc; opt.textContent = doc;
-            select.appendChild(opt);
-        });
+            // Update UI Labels for Years
+            document.querySelectorAll('.year-latest-label').forEach(el => el.innerText = latestYear);
+            document.querySelectorAll('.year-prev-label').forEach(el => el.innerText = prevYear);
 
-        renderMonthPicker();
-        updateDashboard();
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('reportContent').classList.remove('hidden');
+            // Populate Doctors
+            const doctors = [...new Set(globalData.map(r => r.doctor_name))].filter(Boolean);
+            const select = document.getElementById('doctorFilter');
+            doctors.forEach(doc => {
+                const opt = document.createElement('option');
+                opt.value = doc; opt.textContent = doc;
+                select.appendChild(opt);
+            });
+
+            renderMonthPicker();
+            updateDashboard();
+
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('reportContent').classList.remove('hidden');
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('loadingState').innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+        }
     }
 
     function renderMonthPicker() {
@@ -147,7 +162,7 @@
         months.forEach((m, i) => {
             const btn = document.createElement('button');
             btn.className = `month-btn ${i === activeMonthIndex ? 'active' : ''}`;
-            btn.innerText = m.substring(0,3);
+            btn.innerText = m;
             btn.onclick = () => {
                 activeMonthIndex = i;
                 document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
@@ -160,63 +175,75 @@
 
     function updateDashboard() {
         const docFilter = document.getElementById('doctorFilter').value;
-        const baseData = docFilter === 'all' ? globalData : globalData.filter(r => r.doctor_name === docFilter);
+        const base = docFilter === 'all' ? globalData : globalData.filter(r => r.doctor_name === docFilter);
         
         document.getElementById('monthLabelHeader').innerText = months[activeMonthIndex];
 
-        const monthLatest = baseData.filter(r => {
+        // Filter Math
+        const filterByMonthAndYear = (m, y) => base.filter(r => {
             const d = new Date(r.date);
-            return d.getMonth() === activeMonthIndex && d.getFullYear() === latestYear;
+            return d.getMonth() === m && d.getFullYear() === y;
         });
-        const monthPrev = baseData.filter(r => {
-            const d = new Date(r.date);
-            return d.getMonth() === activeMonthIndex && d.getFullYear() === prevYear;
-        });
+
+        const curMonthData = filterByMonthAndYear(activeMonthIndex, latestYear);
+        const prevMonthData = filterByMonthAndYear(activeMonthIndex, prevYear);
 
         const sum = arr => arr.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
-        const rLatest = sum(monthLatest);
-        const rPrev = sum(monthPrev);
+        const revLatest = sum(curMonthData);
+        const revPrev = sum(prevMonthData);
 
-        document.getElementById('valCurrentYear').innerText = `₱${rLatest.toLocaleString()}`;
-        document.getElementById('valPrevYear').innerText = `₱${rPrev.toLocaleString()}`;
-        
-        // Year Comparison (Total Count)
-        const countLatest = baseData.filter(r => new Date(r.date).getFullYear() === latestYear).length;
-        const countPrev = baseData.filter(r => new Date(r.date).getFullYear() === prevYear).length;
+        // Update Monthly Revenue
+        document.getElementById('valCurrentYear').innerText = `₱${revLatest.toLocaleString()}`;
+        document.getElementById('valPrevYear').innerText = `₱${revPrev.toLocaleString()}`;
 
-        document.getElementById('valTotalCurrent').innerText = countLatest.toLocaleString();
-        document.getElementById('valTotalPrev').innerText = countPrev.toLocaleString();
+        // Update Year-to-Year Census (Entire year total)
+        const totalCensusLatest = base.filter(r => new Date(r.date).getFullYear() === latestYear).length;
+        const totalCensusPrev = base.filter(r => new Date(r.date).getFullYear() === prevYear).length;
 
-        applyVariance('revVariance', rLatest - rPrev, '₱');
-        applyVariance('yoyVariance', countLatest - countPrev, '');
-        renderCharts(monthLatest);
+        document.getElementById('valTotalCurrent').innerText = totalCensusLatest.toLocaleString();
+        document.getElementById('valTotalPrev').innerText = totalCensusPrev.toLocaleString();
+
+        // Variances
+        renderVar('revVariance', revLatest - revPrev, '₱');
+        renderVar('yoyVariance', totalCensusLatest - totalCensusPrev, '');
+
+        renderCharts(curMonthData);
     }
 
-    function applyVariance(id, diff, symbol) {
+    function renderVar(id, diff, symbol) {
         const isUp = diff >= 0;
-        const color = isUp ? 'text-emerald-400' : 'text-red-400';
         const icon = isUp ? '▲' : '▼';
-        document.getElementById(id).innerHTML = `<span class="${color} font-black text-xl">${symbol}${Math.abs(diff).toLocaleString()} ${icon}</span>`;
+        const color = isUp ? 'text-emerald-400' : 'text-red-400';
+        document.getElementById(id).innerHTML = `
+            <span class="${color} font-black text-2xl">${symbol}${Math.abs(diff).toLocaleString()} ${icon}</span>
+            <span class="text-[10px] text-slate-500 font-bold block">VS PREV YEAR</span>
+        `;
     }
 
     function renderCharts(data) {
-        if(window.ageChart) window.ageChart.destroy();
-        if(window.genChart) window.genChart.destroy();
-        window.ageChart = new Chart(document.getElementById('ageChart'), {
+        if(window.ageC) window.ageC.destroy();
+        if(window.genC) window.genC.destroy();
+
+        window.ageC = new Chart(document.getElementById('ageChart'), {
             type: 'bar',
             data: { 
                 labels: ['0-18','19-35','36-50','51+'],
-                datasets: [{ label:'Age', data:[
+                datasets: [{ label:'Age Group', data:[
                     data.filter(r=>Number(r.age)<=18).length,
                     data.filter(r=>Number(r.age)>18 && Number(r.age)<=35).length,
                     data.filter(r=>Number(r.age)>35 && Number(r.age)<=50).length,
                     data.filter(r=>Number(r.age)>50).length
-                ], backgroundColor: '#10b981'}]
+                ], backgroundColor:'#10b981'}]
             }
         });
-        window.genChart = new Chart(document.getElementById('genderChart'), {
+
+        window.genC = new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
-            data: { labels:['Male','Female'], datasets:[{ data:[data.filter(r=>r.gender==='Male').length, data.filter(r=>r.gender==='Female').length], backgroundColor:['#0ea5e9','#ec4899'] }]}
+            data: { 
+                labels: ['Male','Female'], 
+                datasets: [{ data:[data.filter(r=>r.gender==='Male').length, data.filter(r=>r.gender==='Female').length], backgroundColor:['#0ea5e9','#ec4899'] }]
+            },
+            options: { cutout:'80%' }
         });
     }
 
