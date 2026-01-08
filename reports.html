@@ -28,7 +28,6 @@
     .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 10px 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     .chart-container { position: relative; flex-grow: 1; min-height: 180px; width: 100%; }
     
-    /* Centered Text for Doughnut */
     .doughnut-wrapper { position: relative; width: 100%; height: 100%; }
     .doughnut-center-text { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
   </style>
@@ -203,52 +202,115 @@
 
     function renderCharts(cur, pre, revC, revP, cenC, cenP) {
         Chart.helpers.each(Chart.instances, (i) => i.destroy());
-        const opt = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { display: false }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } };
+        
+        const formatPHP = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
 
-        // 1. TREND LINE
+        const opt = { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 9 } } }, 
+                x: { grid: { display: false }, ticks: { font: { size: 9 } } } 
+            } 
+        };
+
+        // 1. TREND LINE (With Currency)
         const yearlyRev = monthsShort.map((_, i) => globalData.filter(r => {
             const d = new Date(r.date); return d.getFullYear() === latestYear && d.getMonth() === i;
         }).reduce((a, r) => a + (parseFloat(r.amount) || 0), 0));
-        new Chart(document.getElementById('revLineChart'), { type: 'line', data: { labels: monthsShort, datasets: [{ data: yearlyRev, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointRadius: 3 }] }, options: opt });
+        
+        new Chart(document.getElementById('revLineChart'), { 
+            type: 'line', 
+            data: { labels: monthsShort, datasets: [{ data: yearlyRev, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointRadius: 3 }] }, 
+            options: {
+                ...opt,
+                plugins: { tooltip: { callbacks: { label: (ctx) => `Revenue: ${formatPHP(ctx.parsed.y)}` } } },
+                scales: {
+                    y: { ...opt.scales.y, ticks: { ...opt.scales.y.ticks, callback: (v) => '₱' + v.toLocaleString() } },
+                    x: opt.scales.x
+                }
+            }
+        });
 
-        // 2. REVENUE YoY (Fixed to show both)
+        // 2. REVENUE YoY (Fixed side-by-side bars + Currency)
         new Chart(document.getElementById('revComparisonChart'), {
             type: 'bar',
             data: { 
-                labels: [latestYear, prevYear], 
-                datasets: [{ 
-                    data: [revC, revP], 
-                    backgroundColor: ['#10b981', '#cbd5e1'],
-                    borderRadius: 10,
-                    barThickness: 40
-                }] 
+                labels: ['Annual Revenue'], 
+                datasets: [
+                    { label: latestYear.toString(), data: [revC], backgroundColor: '#10b981', borderRadius: 8, barThickness: 45 },
+                    { label: prevYear.toString(), data: [revP], backgroundColor: '#d4af37', borderRadius: 8, barThickness: 45 }
+                ] 
             },
-            options: { ...opt, plugins: { legend: { display: false } } }
+            options: { 
+                ...opt, 
+                plugins: { 
+                    legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10, weight: '600' } } },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatPHP(ctx.parsed.y)}` } }
+                },
+                scales: {
+                    y: { ...opt.scales.y, ticks: { ...opt.scales.y.ticks, callback: (v) => '₱' + v.toLocaleString() } },
+                    x: opt.scales.x
+                }
+            }
         });
 
-        // 3. CENSUS YoY
+        // 3. CENSUS YoY (Fixed side-by-side bars)
         new Chart(document.getElementById('cenComparisonChart'), {
             type: 'bar',
             data: { 
-                labels: [latestYear, prevYear], 
-                datasets: [{ 
-                    data: [cenC, cenP], 
-                    backgroundColor: ['#3b82f6', '#cbd5e1'],
-                    borderRadius: 10,
-                    barThickness: 40
-                }] 
+                labels: ['Total Census'], 
+                datasets: [
+                    { label: latestYear.toString(), data: [cenC], backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 45 },
+                    { label: prevYear.toString(), data: [cenP], backgroundColor: '#94a3b8', borderRadius: 8, barThickness: 45 }
+                ] 
             },
-            options: { ...opt, plugins: { legend: { display: false } } }
+            options: { 
+                ...opt, 
+                plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10, weight: '600' } } } } 
+            }
         });
 
-        // 4. AGE
-        new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: ['0-18','19-35','36-50','51+'], datasets: [{ data: [cur.filter(r=>Number(r.age)<=18).length, cur.filter(r=>Number(r.age)>18 && Number(r.age)<=35).length, cur.filter(r=>Number(r.age)>35 && Number(r.age)<=50).length, cur.filter(r=>Number(r.age)>50).length], backgroundColor: '#1e293b', borderRadius: 5 }] }, options: opt });
+        // 4. AGE (Rounded Bar)
+        new Chart(document.getElementById('ageChart'), { 
+            type: 'bar', 
+            data: { 
+                labels: ['0-18','19-35','36-50','51+'], 
+                datasets: [{ 
+                    data: [
+                        cur.filter(r=>Number(r.age)<=18).length, 
+                        cur.filter(r=>Number(r.age)>18 && Number(r.age)<=35).length, 
+                        cur.filter(r=>Number(r.age)>35 && Number(r.age)<=50).length, 
+                        cur.filter(r=>Number(r.age)>50).length
+                    ], 
+                    backgroundColor: '#1e293b', 
+                    borderRadius: 6 
+                }] 
+            }, 
+            options: opt 
+        });
 
-        // 5. ENHANCED DOUGHNUT
+        // 5. ENHANCED DOUGHNUT (Premium modern ring)
         new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
-            data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'], hoverOffset: 10, borderWeight: 0, borderRadius: 5 }] },
-            options: { ...opt, cutout: '82%', plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 10 } } } } }
+            data: { 
+                labels: ['Male','Female'], 
+                datasets: [{ 
+                    data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], 
+                    backgroundColor: ['#0ea5e9','#f472b6'], 
+                    hoverOffset: 15, 
+                    borderWidth: 0, 
+                    borderRadius: 10 
+                }] 
+            },
+            options: { 
+                ...opt, 
+                cutout: '80%', 
+                plugins: { 
+                    legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { size: 11, weight: '700' } } } 
+                } 
+            }
         });
     }
 
