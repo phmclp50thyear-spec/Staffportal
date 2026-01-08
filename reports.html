@@ -16,7 +16,7 @@
     .nav-link:hover, .nav-active { color: #10b981; }
     
     .metric-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.5rem; }
-    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 100%; }
+    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; }
     
     .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.5rem; text-transform: uppercase; margin-bottom: 2px; }
     .month-btn.active { color: white; background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
@@ -26,10 +26,11 @@
     .growth-down { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
     .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 10px 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .chart-container { position: relative; flex-grow: 1; min-height: 200px; width: 100%; }
+    .chart-container { position: relative; flex-grow: 1; min-height: 180px; width: 100%; }
     
-    .doughnut-wrapper { position: relative; width: 100%; height: 250px; }
-    .doughnut-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+    /* Centered Text for Doughnut */
+    .doughnut-wrapper { position: relative; width: 100%; height: 100%; }
+    .doughnut-center-text { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -52,59 +53,65 @@
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light tracking-[0.2em] animate-pulse uppercase text-xs">Finalizing Fiscal Reports...</div>
+    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light tracking-[0.2em] animate-pulse uppercase text-xs">Architecting Data Visualization...</div>
 
     <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <div class="lg:col-span-2 space-y-6">
             <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[60vh] overflow-y-auto"></div>
+            <div class="metric-card bg-emerald-900/40">
+                <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VIP Census</p>
+                <h2 id="vipCount" class="text-4xl font-extrabold">0</h2>
+            </div>
         </div>
 
         <div class="lg:col-span-10 space-y-8">
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Trend Line</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Annual Revenue Performance Trend</p>
                     <div class="chart-container"><canvas id="revLineChart"></canvas></div>
                 </div>
                 <div class="flex flex-col gap-6">
                     <div class="metric-card flex-1">
-                        <div class="flex justify-between items-start mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Growth</p><div id="revGrowthBadge"></div></div>
-                        <h2 id="valCurrentYear" class="text-3xl font-extrabold text-white">₱0</h2>
+                        <div class="flex justify-between items-start mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Revenue</p><div id="revGrowthBadge"></div></div>
+                        <h2 id="valCurrentYear" class="text-3xl font-extrabold">₱0</h2>
+                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valPrevYearVal" class="font-bold">₱0</span> (Prev Year)</p>
                     </div>
-                    <div class="metric-card bg-emerald-900/40">
-                        <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VIP Census</p>
-                        <h2 id="vipCount" class="text-4xl font-extrabold text-white">0</h2>
+                    <div class="metric-card flex-1">
+                        <div class="flex justify-between items-start mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Census</p><div id="cenGrowthBadge"></div></div>
+                        <h2 id="valCensusCurrent" class="text-3xl font-extrabold">0</h2>
+                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valCensusPrevVal" class="font-bold">0</span> (Prev Year)</p>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider text-center">Revenue: 2025 vs 2024</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Analysis (YoY Comparison)</p>
                     <div class="chart-container"><canvas id="revComparisonChart"></canvas></div>
                 </div>
                 <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider text-center">Census: 2025 vs 2024</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Census Analysis (YoY Comparison)</p>
                     <div class="chart-container"><canvas id="cenComparisonChart"></canvas></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-                <div class="white-card h-[400px]">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 white-card h-[400px]">
                     <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider border-b pb-2">Top 10 Procedures</p>
                     <div id="procedureList" class="space-y-1 overflow-y-auto"></div>
                 </div>
                 <div class="white-card h-[400px]">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Age Segments</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Age Demographics</p>
                     <div class="chart-container"><canvas id="ageChart"></canvas></div>
                 </div>
                 <div class="white-card h-[400px]">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider text-center">Gender Split</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider text-center">Gender Distribution</p>
                     <div class="doughnut-wrapper">
                         <canvas id="genderChart"></canvas>
                         <div class="doughnut-center-text">
-                            <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Total Patients</p>
+                            <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Total</p>
                             <p id="totalGenderCensus" class="text-2xl font-extrabold text-slate-800">0</p>
                         </div>
                     </div>
@@ -115,118 +122,137 @@
   </main>
 
   <script>
-    // BG logic omitted for brevity, use your existing one here.
-    const db = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co','sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
-    let globalData = [], latestYear = 2025, prevYear = 2024, selectedMonthIndex = null;
+    const canvas=document.getElementById('bg-canvas');const ctx=canvas.getContext('2d');let molecules=[];class Molecule{constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*.15;this.vy=(Math.random()-.5)*.15;this.scale=Math.random()*.5+.5}draw(){ctx.beginPath();ctx.arc(this.x,this.y,2*this.scale,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill()}update(){this.x+=this.vx;this.y+=this.vy;if(this.x>canvas.width||this.x<0)this.vx*=-1;if(this.y>canvas.height||this.y<0)this.vy*=-1}}function initBG(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;molecules=[];for(let i=0;i<15;i++)molecules.push(new Molecule())}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);molecules.forEach(m=>{m.update();m.draw()});requestAnimationFrame(animate)}initBG();animate();
+
+    let globalData = [];
+    let latestYear, prevYear;
+    let selectedMonthIndex = null;
     const monthsShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const monthsFull = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const db = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co','sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
 
     async function init() {
-        const { data } = await db.from('patient_records').select('*');
-        globalData = data || [];
-        renderMonthPicker(); 
-        updateDashboard();
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('reportContent').classList.remove('hidden');
+        try {
+            const { data, error } = await db.from('patient_records').select('*');
+            if (error) throw error;
+            globalData = data || [];
+            const years = [...new Set(globalData.map(r => new Date(r.date).getFullYear()))].sort((a,b) => b-a);
+            latestYear = years[0] || new Date().getFullYear();
+            prevYear = years[1] || latestYear - 1;
+            renderMonthPicker(); 
+            updateDashboard();
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('reportContent').classList.remove('hidden');
+        } catch (e) { document.getElementById('loadingState').innerText = "Error: " + e.message; }
     }
 
     function renderMonthPicker() {
         const p = document.getElementById('monthPicker'); p.innerHTML = '';
         const allBtn = document.createElement('button');
         allBtn.className = `month-btn ${selectedMonthIndex === null ? 'active' : ''}`;
-        allBtn.innerText = 'All Months';
+        allBtn.innerText = 'Overall View';
         allBtn.onclick = () => { selectedMonthIndex = null; renderMonthPicker(); updateDashboard(); };
         p.appendChild(allBtn);
-        ["January","February","March","April","May","June","July","August","September","October","November","December"].forEach((m, i) => {
+        monthsFull.forEach((m, i) => {
             const btn = document.createElement('button');
             btn.className = `month-btn ${i === selectedMonthIndex ? 'active' : ''}`;
             btn.innerText = m;
-            btn.onclick = () => { selectedMonthIndex = i; renderMonthPicker(); updateDashboard(); };
+            btn.onclick = () => { selectedMonthIndex = (selectedMonthIndex === i) ? null : i; renderMonthPicker(); updateDashboard(); };
             p.appendChild(btn);
         });
     }
 
     function updateDashboard() {
-        const filter = (yr) => globalData.filter(r => {
+        const filterFn = (yr) => globalData.filter(r => {
             const d = new Date(r.date);
             return d.getFullYear() === yr && (selectedMonthIndex === null || d.getMonth() === selectedMonthIndex);
         });
-        const cur = filter(latestYear), pre = filter(prevYear);
-        const revC = cur.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
-        const revP = pre.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
-        
-        document.getElementById('valCurrentYear').innerText = `₱${revC.toLocaleString()}`;
-        document.getElementById('totalGenderCensus').innerText = cur.length;
-        document.getElementById('vipCount').innerText = cur.filter(r => r.guarantor?.toLowerCase() === 'vip').length;
 
-        const pct = revP > 0 ? ((revC - revP) / revP * 100).toFixed(1) : '100';
-        document.getElementById('revGrowthBadge').innerHTML = `<span class="growth-badge ${pct >= 0 ? 'growth-up' : 'growth-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
+        const cur = filterFn(latestYear), pre = filterFn(prevYear);
+        const sum = arr => arr.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
+        const revC = sum(cur), revP = sum(pre), cenC = cur.length, cenP = pre.length;
+
+        document.getElementById('valCurrentYear').innerText = `₱${revC.toLocaleString()}`;
+        document.getElementById('valPrevYearVal').innerText = `₱${revP.toLocaleString()}`;
+        document.getElementById('valCensusCurrent').innerText = cenC.toLocaleString();
+        document.getElementById('valCensusPrevVal').innerText = cenP.toLocaleString();
+        document.getElementById('totalGenderCensus').innerText = cenC.toLocaleString();
+
+        const calcG = (c, p, id) => {
+            const pct = p > 0 ? ((c - p) / p * 100).toFixed(1) : (c > 0 ? '100' : '0');
+            document.getElementById(id).innerHTML = `<span class="growth-badge ${pct >= 0 ? 'growth-up' : 'growth-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
+        };
+        calcG(revC, revP, 'revGrowthBadge'); calcG(cenC, cenP, 'cenGrowthBadge');
+
+        const vipCount = cur.filter(r => r.payment_type?.toLowerCase() === 'company' && r.guarantor?.toLowerCase() === 'vip').length;
+        document.getElementById('vipCount').innerText = vipCount;
 
         renderProcedures(cur);
-        renderCharts(cur, pre, revC, revP, cur.length, pre.length);
+        renderCharts(cur, pre, revC, revP, cenC, cenP);
     }
 
     function renderProcedures(data) {
         const counts = {}; data.forEach(r => { if(r.procedures) counts[r.procedures] = (counts[r.procedures] || 0) + 1; });
         const top = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
         const list = document.getElementById('procedureList');
-        list.innerHTML = top.map(([n, c]) => `<div class="procedure-item"><b>${n}</b><span class="text-emerald-500">${c}</span></div>`).join('');
+        list.innerHTML = top.length ? '' : '<p class="text-xs text-slate-400 italic text-center mt-10">No records</p>';
+        top.forEach(([n, c]) => {
+            list.innerHTML += `<div class="procedure-item"><span class="truncate pr-4 font-bold text-slate-600">${n}</span><span class="text-emerald-500 font-extrabold">${c}</span></div>`;
+        });
     }
 
-    // --- REWRITTEN CHART FUNCTION ---
     function renderCharts(cur, pre, revC, revP, cenC, cenP) {
         Chart.helpers.each(Chart.instances, (i) => i.destroy());
+        const opt = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { display: false }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } };
 
-        const barOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { grid: { display: false }, beginAtZero: true },
-                x: { grid: { display: false } }
-            }
-        };
+        // 1. TREND LINE
+        const yearlyRev = monthsShort.map((_, i) => globalData.filter(r => {
+            const d = new Date(r.date); return d.getFullYear() === latestYear && d.getMonth() === i;
+        }).reduce((a, r) => a + (parseFloat(r.amount) || 0), 0));
+        new Chart(document.getElementById('revLineChart'), { type: 'line', data: { labels: monthsShort, datasets: [{ data: yearlyRev, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointRadius: 3 }] }, options: opt });
 
-        // REVENUE BARS: Both years side-by-side
+        // 2. REVENUE YoY (Fixed to show both)
         new Chart(document.getElementById('revComparisonChart'), {
             type: 'bar',
-            data: {
-                labels: ['Revenue Performance'],
-                datasets: [
-                    { label: '2025', data: [revC], backgroundColor: '#10b981', borderRadius: 8, barThickness: 50 },
-                    { label: '2024', data: [revP], backgroundColor: '#cbd5e1', borderRadius: 8, barThickness: 50 }
-                ]
+            data: { 
+                labels: [latestYear, prevYear], 
+                datasets: [{ 
+                    data: [revC, revP], 
+                    backgroundColor: ['#10b981', '#cbd5e1'],
+                    borderRadius: 10,
+                    barThickness: 40
+                }] 
             },
-            options: barOptions
+            options: { ...opt, plugins: { legend: { display: false } } }
         });
 
-        // CENSUS BARS: Both years side-by-side
+        // 3. CENSUS YoY
         new Chart(document.getElementById('cenComparisonChart'), {
             type: 'bar',
-            data: {
-                labels: ['Census Performance'],
-                datasets: [
-                    { label: '2025', data: [cenC], backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 50 },
-                    { label: '2024', data: [cenP], backgroundColor: '#cbd5e1', borderRadius: 8, barThickness: 50 }
-                ]
+            data: { 
+                labels: [latestYear, prevYear], 
+                datasets: [{ 
+                    data: [cenC, cenP], 
+                    backgroundColor: ['#3b82f6', '#cbd5e1'],
+                    borderRadius: 10,
+                    barThickness: 40
+                }] 
             },
-            options: barOptions
+            options: { ...opt, plugins: { legend: { display: false } } }
         });
 
-        // TREND LINE
-        const yearly = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === 2025 && new Date(r.date).getMonth() === i).reduce((a, r) => a + (parseFloat(r.amount) || 0), 0));
-        new Chart(document.getElementById('revLineChart'), { type: 'line', data: { labels: monthsShort, datasets: [{ data: yearly, borderColor: '#10b981', fill: true, tension: 0.4 }] }, options: barOptions });
+        // 4. AGE
+        new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: ['0-18','19-35','36-50','51+'], datasets: [{ data: [cur.filter(r=>Number(r.age)<=18).length, cur.filter(r=>Number(r.age)>18 && Number(r.age)<=35).length, cur.filter(r=>Number(r.age)>35 && Number(r.age)<=50).length, cur.filter(r=>Number(r.age)>50).length], backgroundColor: '#1e293b', borderRadius: 5 }] }, options: opt });
 
-        // AGE
-        new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: ['0-18','19-35','36-50','51+'], datasets: [{ data: [cur.filter(r=>r.age<=18).length, cur.filter(r=>r.age>18&&r.age<=35).length, cur.filter(r=>r.age>35&&r.age<=50).length, cur.filter(r=>r.age>50).length], backgroundColor: '#1e293b' }] }, options: barOptions });
-
-        // DOUGHNUT
+        // 5. ENHANCED DOUGHNUT
         new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
-            data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'], borderRadius: 5 }] },
-            options: { cutout: '80%', plugins: { legend: { position: 'bottom' } }, maintainAspectRatio: false }
+            data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'], hoverOffset: 10, borderWeight: 0, borderRadius: 5 }] },
+            options: { ...opt, cutout: '82%', plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 10 } } } } }
         });
     }
 
+    async function logout() { await db.auth.signOut(); window.location.href = "index.html"; }
     init();
   </script>
 </body>
