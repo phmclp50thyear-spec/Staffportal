@@ -12,20 +12,23 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; min-height: 100vh; }
     #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
     
-    /* Minimalist Navigation */
+    /* Navigation */
     .glass-nav { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-    .nav-link { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.8rem; transition: 0.3s; letter-spacing: 0.05em; }
+    .nav-link { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.75rem; transition: 0.3s; letter-spacing: 0.1em; }
     .nav-link:hover, .nav-active { color: #10b981; }
 
-    /* Minimalist Cards */
-    .metric-card { background: rgba(17, 24, 39, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; padding: 1.5rem; transition: 0.3s; }
-    .chart-container { background: white; border-radius: 1rem; padding: 1.25rem; color: #1e293b; }
+    /* Minimalist Elements */
+    .metric-card { background: rgba(17, 24, 39, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; padding: 1.5rem; }
+    .white-card { background: white; border-radius: 1rem; padding: 1.25rem; color: #1e293b; }
     
-    /* Sidebar Slicer */
-    .month-list { border-radius: 12px; overflow: hidden; }
-    .month-btn { width: 100%; text-align: left; padding: 7px 12px; font-size: 11px; font-weight: 600; transition: 0.2s; color: rgba(255,255,255,0.4); border-left: 2px solid transparent; }
+    /* Slicer */
+    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.2s; color: rgba(255,255,255,0.3); border-left: 2px solid transparent; text-transform: uppercase; letter-spacing: 0.05em; }
     .month-btn:hover { color: white; background: rgba(255,255,255,0.05); }
     .month-btn.active { color: #10b981; border-left: 2px solid #10b981; background: rgba(16, 185, 129, 0.05); }
+
+    /* List Styling */
+    .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.05); padding: 8px 0; display: flex; justify-content: space-between; font-size: 12px; }
+    .procedure-item:last-child { border: none; }
   </style>
 </head>
 <body>
@@ -35,33 +38,30 @@
   <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-900/20">
-          <svg class="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-900/40">
+          <svg class="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5"/></svg>
         </div>
-        <h1 class="font-extrabold text-sm tracking-widest uppercase text-white">Executive Health Dashboard</h1>
+        <h1 class="font-extrabold text-xs tracking-widest uppercase">Executive Health Dashboard</h1>
       </div>
       <div class="hidden md:flex items-center gap-8">
         <a href="home.html" class="nav-link">HOME</a>
         <a href="dashboard.html" class="nav-link">RECORDS</a>
         <a href="reports.html" class="nav-link nav-active">REPORTS</a>
       </div>
-      <button onclick="logout()" class="text-[10px] font-bold text-red-400 hover:text-red-300 transition uppercase tracking-widest">Logout</button>
+      <button onclick="logout()" class="text-[10px] font-bold text-red-500 tracking-widest hover:text-red-400">LOGOUT</button>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-20 text-emerald-400 font-light tracking-widest animate-pulse">SYNCHRONIZING EXECUTIVE DATA...</div>
+    <div id="loadingState" class="text-center py-20 text-emerald-400 font-light tracking-widest animate-pulse uppercase text-xs">Accessing Secure Records...</div>
 
     <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <div class="lg:col-span-2 space-y-6">
-            <div>
-                <p class="text-[10px] font-bold text-slate-500 mb-4 tracking-widest uppercase">Select Period</p>
-                <div class="month-list" id="monthPicker"></div>
-            </div>
-
-            <div class="metric-card border-t-2 border-emerald-500">
-                <p class="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter mb-1">VIP Census</p>
+            <div id="monthPicker" class="space-y-1"></div>
+            
+            <div class="metric-card border-l-2 border-emerald-500">
+                <p class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-1">VIP Census</p>
                 <h2 id="vipCount" class="text-3xl font-light">0</h2>
             </div>
         </div>
@@ -74,17 +74,11 @@
                         <div>
                             <p class="text-[10px] font-bold text-slate-500 uppercase mb-4" id="monthLabelHeader">Revenue</p>
                             <div class="space-y-1">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-2xl font-semibold" id="valCurrentYear">₱0</span>
-                                    <span class="text-[10px] text-slate-600 latest-year-tag">--</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-lg font-medium text-slate-500" id="valPrevYear">₱0</span>
-                                    <span class="text-[10px] text-slate-600 prev-year-tag">--</span>
-                                </div>
+                                <div class="flex items-center gap-3"><span class="text-2xl font-semibold" id="valCurrentYear">₱0</span><span class="text-[10px] text-slate-600 latest-year-tag">--</span></div>
+                                <div class="flex items-center gap-3"><span class="text-lg font-medium text-slate-500" id="valPrevYear">₱0</span><span class="text-[10px] text-slate-600 prev-year-tag">--</span></div>
                             </div>
                         </div>
-                        <div id="revVariance" class="text-right"></div>
+                        <div id="revVariance"></div>
                     </div>
                 </div>
 
@@ -93,35 +87,32 @@
                         <div>
                             <p class="text-[10px] font-bold text-slate-500 uppercase mb-4">Total Census</p>
                             <div class="space-y-1">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-2xl font-semibold" id="valCensusCurrent">0</span>
-                                    <span class="text-[10px] text-slate-600 latest-year-tag">--</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-lg font-medium text-slate-500" id="valCensusPrev">0</span>
-                                    <span class="text-[10px] text-slate-600 prev-year-tag">--</span>
-                                </div>
+                                <div class="flex items-center gap-3"><span class="text-2xl font-semibold" id="valCensusCurrent">0</span><span class="text-[10px] text-slate-600 latest-year-tag">--</span></div>
+                                <div class="flex items-center gap-3"><span class="text-lg font-medium text-slate-500" id="valCensusPrev">0</span><span class="text-[10px] text-slate-600 prev-year-tag">--</span></div>
                             </div>
                         </div>
-                        <div id="censusVariance" class="text-right"></div>
+                        <div id="censusVariance"></div>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 chart-container shadow-sm">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">Top 10 Procedures</p>
-                    <canvas id="procedureChart" height="120"></canvas>
+                <div class="lg:col-span-1 white-card shadow-sm">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Procedures</p>
+                    <div id="procedureList" class="space-y-1">
+                        </div>
                 </div>
-                <div class="chart-container shadow-sm">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">Gender Split</p>
-                    <canvas id="genderChart"></canvas>
-                </div>
-            </div>
 
-            <div class="chart-container shadow-sm">
-                <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">Age Demographics</p>
-                <canvas id="ageChart" height="80"></canvas>
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="white-card">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">Age Demographics</p>
+                        <canvas id="ageChart" height="100"></canvas>
+                    </div>
+                    <div class="white-card">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">Gender Distribution</p>
+                        <canvas id="genderChart" height="60"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -129,7 +120,7 @@
 
   <script>
     // Molecule BG logic
-    const canvas=document.getElementById('bg-canvas');const ctx=canvas.getContext('2d');let molecules=[];class Molecule{constructor(){this.init()}init(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*.3;this.vy=(Math.random()-.5)*.3;this.angle=Math.random()*Math.PI*2;this.scale=Math.random()*.5+.5;this.structure=[{x:0,y:0,r:4,c:'rgba(255,255,255,0.05)'},{x:15,y:0,r:2,c:'rgba(255,255,255,0.05)'}];this.bonds=[[0,1]]}draw(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);ctx.scale(this.scale,this.scale);ctx.strokeStyle='rgba(255,255,255,0.03)';this.bonds.forEach(b=>{ctx.beginPath();ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y);ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y);ctx.stroke()});this.structure.forEach(a=>{ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fillStyle=a.c;ctx.fill()});ctx.restore()}update(){this.x+=this.vx;this.y+=this.vy;if(this.x>canvas.width+50||this.x<-50)this.vx*=-1;if(this.y>canvas.height+50||this.y<-100)this.vy*=-1}}function initBG(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;molecules=[];for(let i=0;i<12;i++)molecules.push(new Molecule())}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);molecules.forEach(m=>{m.update();m.draw()});requestAnimationFrame(animate)}window.addEventListener('resize',initBG);initBG();animate();
+    const canvas=document.getElementById('bg-canvas');const ctx=canvas.getContext('2d');let molecules=[];class Molecule{constructor(){this.init()}init(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*.2;this.vy=(Math.random()-.5)*.2;this.angle=Math.random()*Math.PI*2;this.scale=Math.random()*.5+.5;this.structure=[{x:0,y:0,r:3,c:'rgba(255,255,255,0.05)'},{x:12,y:0,r:1.5,c:'rgba(255,255,255,0.05)'}];this.bonds=[[0,1]]}draw(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);ctx.scale(this.scale,this.scale);ctx.strokeStyle='rgba(255,255,255,0.02)';this.bonds.forEach(b=>{ctx.beginPath();ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y);ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y);ctx.stroke()});this.structure.forEach(a=>{ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fillStyle=a.c;ctx.fill()});ctx.restore()}update(){this.x+=this.vx;this.y+=this.vy;if(this.x>canvas.width+50||this.x<-50)this.vx*=-1;if(this.y>canvas.height+50||this.y<-100)this.vy*=-1}}function initBG(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;molecules=[];for(let i=0;i<10;i++)molecules.push(new Molecule())}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);molecules.forEach(m=>{m.update();m.draw()});requestAnimationFrame(animate)}window.addEventListener('resize',initBG);initBG();animate();
 
     let globalData = [];
     let latestYear, prevYear;
@@ -153,22 +144,20 @@
         const p = document.getElementById('monthPicker'); p.innerHTML = '';
         const allBtn = document.createElement('button');
         allBtn.className = `month-btn ${selectedMonthIndex === null ? 'active' : ''}`;
-        allBtn.innerText = 'ALL TIME';
+        allBtn.innerText = 'All Time';
         allBtn.onclick = () => { selectedMonthIndex = null; renderMonthPicker(); updateDashboard(); };
         p.appendChild(allBtn);
 
         months.forEach((m, i) => {
             const btn = document.createElement('button');
             btn.className = `month-btn ${i === selectedMonthIndex ? 'active' : ''}`;
-            btn.innerText = m.toUpperCase();
+            btn.innerText = m;
             btn.onclick = () => { selectedMonthIndex = (selectedMonthIndex === i) ? null : i; renderMonthPicker(); updateDashboard(); };
             p.appendChild(btn);
         });
     }
 
     function updateDashboard() {
-        document.getElementById('monthLabelHeader').innerText = selectedMonthIndex === null ? "Total Revenue" : months[selectedMonthIndex] + " Revenue";
-        
         const filterFn = (year) => globalData.filter(r => {
             const d = new Date(r.date);
             return d.getFullYear() === year && (selectedMonthIndex === null || d.getMonth() === selectedMonthIndex);
@@ -192,6 +181,7 @@
 
         renderVar('revVariance', revC - revP, '₱');
         renderVar('censusVariance', cenC - cenP, '');
+        renderProcedures(curData);
         renderCharts(curData);
     }
 
@@ -200,24 +190,24 @@
         document.getElementById(id).innerHTML = `<span class="${isUp ? 'text-emerald-400' : 'text-red-400'} font-bold text-lg">${sym}${Math.abs(diff).toLocaleString()} ${isUp ? '▲' : '▼'}</span>`;
     }
 
+    function renderProcedures(data) {
+        const counts = {};
+        data.forEach(r => { if(r.procedure) counts[r.procedure] = (counts[r.procedure] || 0) + 1; });
+        const top10 = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+        
+        const list = document.getElementById('procedureList');
+        list.innerHTML = top10.length ? '' : '<p class="text-xs text-slate-400 italic">No data</p>';
+        top10.forEach(([name, count]) => {
+            list.innerHTML += `<div class="procedure-item">
+                <span class="truncate pr-4 font-medium text-slate-700">${name}</span>
+                <span class="font-bold text-emerald-600">${count}</span>
+            </div>`;
+        });
+    }
+
     function renderCharts(data) {
-        if(window.pC) window.pC.destroy();
         if(window.aC) window.aC.destroy();
         if(window.gC) window.gC.destroy();
-
-        // Top 10 Procedures Logic
-        const procCounts = {};
-        data.forEach(r => { if(r.procedure) procCounts[r.procedure] = (procCounts[r.procedure] || 0) + 1; });
-        const top10 = Object.entries(procCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
-
-        window.pC = new Chart(document.getElementById('procedureChart'), {
-            type: 'bar',
-            data: { 
-                labels: top10.map(x => x[0].substring(0, 15)), 
-                datasets: [{ data: top10.map(x => x[1]), backgroundColor: '#10b981', borderRadius: 4 }] 
-            },
-            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }
-        });
 
         window.aC = new Chart(document.getElementById('ageChart'), {
             type: 'bar',
@@ -226,14 +216,14 @@
                 data.filter(r => Number(r.age) > 18 && Number(r.age) <= 35).length,
                 data.filter(r => Number(r.age) > 35 && Number(r.age) <= 50).length,
                 data.filter(r => Number(r.age) > 50).length
-            ], backgroundColor: '#334155' }] },
-            options: { plugins: { legend: { display: false } } }
+            ], backgroundColor: '#064e3b' }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
 
         window.gC = new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
             data: { labels: ['Male','Female'], datasets: [{ data: [data.filter(r=>r.gender==='Male').length, data.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#ec4899'] }] },
-            options: { cutout: '85%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } } } }
+            options: { cutout: '85%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
         });
     }
 
