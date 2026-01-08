@@ -15,21 +15,18 @@
     .nav-link { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.75rem; transition: 0.3s; letter-spacing: 0.1em; }
     .nav-link:hover, .nav-active { color: #10b981; }
     
-    .metric-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.5rem; transition: transform 0.3s ease; }
-    .metric-card:hover { transform: translateY(-5px); border-color: rgba(16, 185, 129, 0.3); }
+    .metric-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.5rem; }
+    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; height: 100%; display: flex; flex-direction: column; }
     
-    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-    
-    .month-btn { width: 100%; text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.75rem; text-transform: uppercase; margin-bottom: 2px; }
-    .month-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.5rem; text-transform: uppercase; margin-bottom: 2px; }
     .month-btn.active { color: white; background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
 
     .growth-badge { padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
     .growth-up { background: rgba(16, 185, 129, 0.15); color: #10b981; }
     .growth-down { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
-    .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 12px 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; transition: 0.2s; }
-    .procedure-item:hover { background: rgba(16, 185, 129, 0.02); }
+    .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+    .chart-box { flex-grow: 1; position: relative; min-height: 0; }
   </style>
 </head>
 <body>
@@ -39,7 +36,7 @@
   <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-9 h-9 bg-gradient-to-tr from-emerald-600 to-emerald-400 rounded-xl flex items-center justify-center shadow-lg"><svg class="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5"/></svg></div>
+        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg"><svg class="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5"/></svg></div>
         <h1 class="font-extrabold text-sm tracking-tighter uppercase">Executive Health Dashboard</h1>
       </div>
       <div class="hidden md:flex items-center gap-10">
@@ -52,63 +49,56 @@
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light tracking-[0.2em] animate-pulse uppercase text-xs">Architecting Data Visualization...</div>
+    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light tracking-[0.2em] animate-pulse uppercase text-xs">Generating Fiscal Intelligence...</div>
 
-    <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <div class="lg:col-span-2 space-y-6">
-            <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5"></div>
-            <div class="metric-card bg-gradient-to-br from-emerald-900/40 to-black/40">
+        <div class="lg:col-span-2 space-y-4">
+            <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[70vh] overflow-y-auto"></div>
+            <div class="metric-card bg-emerald-900/20">
                 <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VIP Census</p>
-                <div class="flex items-baseline gap-2">
-                    <h2 id="vipCount" class="text-4xl font-extrabold">0</h2>
-                    <span class="text-[10px] text-emerald-600 font-bold uppercase">Patients</span>
-                </div>
+                <h2 id="vipCount" class="text-3xl font-extrabold">0</h2>
             </div>
         </div>
 
-        <div class="lg:col-span-10 space-y-8">
+        <div class="lg:col-span-10 space-y-6">
             
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Annual Revenue Trend</p>
+                    <div class="chart-box"><canvas id="revLineChart"></canvas></div>
+                </div>
+                <div class="space-y-6">
+                    <div class="metric-card">
+                        <div class="flex justify-between items-start mb-2"><p class="text-[10px] font-bold text-slate-500 uppercase">Revenue</p><div id="revGrowthBadge"></div></div>
+                        <h2 id="valCurrentYear" class="text-3xl font-extrabold">₱0</h2>
+                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valPrevYearText">₱0</span> (LY)</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="flex justify-between items-start mb-2"><p class="text-[10px] font-bold text-slate-500 uppercase">Census</p><div id="cenGrowthBadge"></div></div>
+                        <h2 id="valCensusCurrent" class="text-3xl font-extrabold">0</h2>
+                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valCensusPrevText">0</span> (LY)</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="metric-card">
-                    <div class="flex justify-between items-start mb-6">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Revenue Growth</p>
-                        <div id="revGrowthBadge"></div>
-                    </div>
-                    <div class="flex justify-between items-end">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-3"><span class="text-4xl font-extrabold" id="valCurrentYear">₱0</span><span class="text-[10px] bg-white/10 px-2 py-1 rounded text-slate-400 latest-year-label"></span></div>
-                            <div class="flex items-center gap-3"><span class="text-lg text-slate-500 font-medium" id="valPrevYear">₱0</span><span class="text-[10px] text-slate-600 prev-year-label"></span></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="metric-card">
-                    <div class="flex justify-between items-start mb-6">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Census Growth</p>
-                        <div id="cenGrowthBadge"></div>
-                    </div>
-                    <div class="flex justify-between items-end">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-3"><span class="text-4xl font-extrabold" id="valCensusCurrent">0</span><span class="text-[10px] bg-white/10 px-2 py-1 rounded text-slate-400 latest-year-label"></span></div>
-                            <div class="flex items-center gap-3"><span class="text-lg text-slate-500 font-medium" id="valCensusPrev">0</span><span class="text-[10px] text-slate-600 prev-year-label"></span></div>
-                        </div>
-                    </div>
-                </div>
+                <div class="white-card"><p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Revenue YoY Comparison</p><div class="chart-box"><canvas id="revComparisonChart"></canvas></div></div>
+                <div class="white-card"><p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Census YoY Comparison</p><div class="chart-box"><canvas id="cenComparisonChart"></canvas></div></div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="white-card"><p class="text-[11px] font-extrabold text-slate-400 uppercase mb-6 tracking-wider">Revenue Analysis</p><canvas id="revComparisonChart" height="200"></canvas></div>
-                <div class="white-card"><p class="text-[11px] font-extrabold text-slate-400 uppercase mb-6 tracking-wider">Census Analysis</p><canvas id="cenComparisonChart" height="200"></canvas></div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-6 tracking-wider">Common Procedures</p>
-                    <div id="procedureList" class="space-y-1"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                <div class="white-card max-h-[350px]">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-3 border-b pb-2">Top 10 Procedures</p>
+                    <div id="procedureList" class="overflow-y-auto pr-2"></div>
                 </div>
-                <div class="lg:col-span-2 space-y-8">
-                    <div class="white-card"><p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Patient Age Segments</p><canvas id="ageChart" height="110"></canvas></div>
-                    <div class="white-card"><p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Gender Identity</p><canvas id="genderChart" height="70"></canvas></div>
+                <div class="white-card max-h-[350px]">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-3">Age Groups</p>
+                    <div class="chart-box"><canvas id="ageChart"></canvas></div>
+                </div>
+                <div class="white-card max-h-[350px]">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-3 text-center">Gender Split</p>
+                    <div class="chart-box flex items-center justify-center"><canvas id="genderChart"></canvas></div>
                 </div>
             </div>
         </div>
@@ -116,13 +106,17 @@
   </main>
 
   <script>
-    // Molecule BG
-    const canvas=document.getElementById('bg-canvas');const ctx=canvas.getContext('2d');let molecules=[];class Molecule{constructor(){this.init()}init(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*.2;this.vy=(Math.random()-.5)*.2;this.angle=Math.random()*Math.PI*2;this.scale=Math.random()*.5+.5;this.structure=[{x:0,y:0,r:3,c:'rgba(255,255,255,0.05)'},{x:12,y:0,r:1.5,c:'rgba(255,255,255,0.05)'}];this.bonds=[[0,1]]}draw(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);ctx.scale(this.scale,this.scale);ctx.strokeStyle='rgba(255,255,255,0.02)';this.bonds.forEach(b=>{ctx.beginPath();ctx.moveTo(this.structure[b[0]].x,this.structure[b[0]].y);ctx.lineTo(this.structure[b[1]].x,this.structure[b[1]].y);ctx.stroke()});this.structure.forEach(a=>{ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fillStyle=a.c;ctx.fill()});ctx.restore()}update(){this.x+=this.vx;this.y+=this.vy;if(this.x>canvas.width+50||this.x<-50)this.vx*=-1;if(this.y>canvas.height+50||this.y<-100)this.vy*=-1}}function initBG(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;molecules=[];for(let i=0;i<12;i++)molecules.push(new Molecule())}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);molecules.forEach(m=>{m.update();m.draw()});requestAnimationFrame(animate)}window.addEventListener('resize',initBG);initBG();animate();
+    // Molecule BG simplified
+    const canvas=document.getElementById('bg-canvas');const ctx=canvas.getContext('2d');let molecules=[];class Molecule{constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*.15;this.vy=(Math.random()-.5)*.15;this.scale=Math.random()*.5+.5}draw(){ctx.beginPath();ctx.arc(this.x,this.y,3*this.scale,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill()}update(){this.x+=this.vx;this.y+=this.vy;if(this.x>canvas.width||this.x<0)this.vx*=-1;if(this.y>canvas.height||this.y<0)this.vy*=-1}}
+    function initBG(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;molecules=[];for(let i=0;i<20;i++)molecules.push(new Molecule())}
+    function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);molecules.forEach(m=>{m.update();m.draw()});requestAnimationFrame(animate)}
+    initBG();animate();
 
     let globalData = [];
     let latestYear, prevYear;
     let selectedMonthIndex = null;
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const fullMonths = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const db = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co','sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
 
     async function init() {
@@ -130,8 +124,6 @@
         globalData = data || [];
         const years = [...new Set(globalData.map(r => new Date(r.date).getFullYear()))].sort((a,b) => b-a);
         latestYear = years[0]; prevYear = years[1] || latestYear - 1;
-        document.querySelectorAll('.latest-year-label').forEach(e => e.innerText = latestYear);
-        document.querySelectorAll('.prev-year-label').forEach(e => e.innerText = prevYear);
         renderMonthPicker(); updateDashboard();
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('reportContent').classList.remove('hidden');
@@ -144,7 +136,7 @@
         allBtn.innerText = 'Overall';
         allBtn.onclick = () => { selectedMonthIndex = null; renderMonthPicker(); updateDashboard(); };
         p.appendChild(allBtn);
-        months.forEach((m, i) => {
+        fullMonths.forEach((m, i) => {
             const btn = document.createElement('button');
             btn.className = `month-btn ${i === selectedMonthIndex ? 'active' : ''}`;
             btn.innerText = m;
@@ -154,9 +146,9 @@
     }
 
     function updateDashboard() {
-        const filterFn = (year) => globalData.filter(r => {
+        const filterFn = (year, mIdx = selectedMonthIndex) => globalData.filter(r => {
             const d = new Date(r.date);
-            return d.getFullYear() === year && (selectedMonthIndex === null || d.getMonth() === selectedMonthIndex);
+            return d.getFullYear() === year && (mIdx === null || d.getMonth() === mIdx);
         });
 
         const curData = filterFn(latestYear);
@@ -167,18 +159,13 @@
         const cenC = curData.length, cenP = preData.length;
 
         document.getElementById('valCurrentYear').innerText = `₱${revC.toLocaleString()}`;
-        document.getElementById('valPrevYear').innerText = `₱${revP.toLocaleString()}`;
+        document.getElementById('valPrevYearText').innerText = `₱${revP.toLocaleString()}`;
         document.getElementById('valCensusCurrent').innerText = cenC.toLocaleString();
-        document.getElementById('valCensusPrev').innerText = cenP.toLocaleString();
+        document.getElementById('valCensusPrevText').innerText = cenP.toLocaleString();
         
-        // GROWTH % CALCULATIONS
         const calcGrowth = (c, p, id) => {
             const pct = p > 0 ? ((c - p) / p * 100).toFixed(1) : '100';
-            const isUp = pct >= 0;
-            document.getElementById(id).innerHTML = `
-                <span class="growth-badge ${isUp ? 'growth-up' : 'growth-down'}">
-                    ${isUp ? '▲' : '▼'} ${Math.abs(pct)}%
-                </span>`;
+            document.getElementById(id).innerHTML = `<span class="growth-badge ${pct >= 0 ? 'growth-up' : 'growth-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
         };
         calcGrowth(revC, revP, 'revGrowthBadge');
         calcGrowth(cenC, cenP, 'cenGrowthBadge');
@@ -195,58 +182,50 @@
         data.forEach(r => { if(r.procedures) counts[r.procedures] = (counts[r.procedures] || 0) + 1; });
         const top10 = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
         const list = document.getElementById('procedureList');
-        list.innerHTML = top10.length ? '' : '<p class="text-xs text-slate-400 italic">No activity recorded</p>';
+        list.innerHTML = top10.length ? '' : '<p class="text-xs text-slate-400 italic">No activity</p>';
         top10.forEach(([name, count]) => {
             list.innerHTML += `<div class="procedure-item"><span class="truncate pr-4 font-bold text-slate-600">${name}</span><span class="text-emerald-500 font-extrabold">${count}</span></div>`;
         });
     }
 
     function renderCharts(curData, preData, revC, revP, cenC, cenP) {
-        if(window.revCh) window.revCh.destroy(); if(window.cenCh) window.cenCh.destroy();
-        if(window.ageCh) window.ageCh.destroy(); if(window.genCh) window.genCh.destroy();
+        Chart.helpers.each(Chart.instances, (instance) => instance.destroy());
 
-        const modernOpt = {
-            responsive: true,
-            plugins: { legend: { display: true, position: 'top', labels: { usePointStyle: true, font: { size: 10, weight: '700' } } } },
-            scales: { y: { grid: { display: false }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } },
-            elements: { bar: { borderRadius: 8 } }
-        };
+        const baseOpt = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { display: false } }, x: { grid: { display: false } } } };
 
-        // REVENUE CHART
-        window.revCh = new Chart(document.getElementById('revComparisonChart'), {
-            type: 'bar',
-            data: { labels: ['Revenue Performance'], datasets: [
-                { label: `${latestYear}`, data: [revC], backgroundColor: '#10b981', hoverBackgroundColor: '#059669' },
-                { label: `${prevYear}`, data: [revP], backgroundColor: '#e2e8f0', hoverBackgroundColor: '#cbd5e1' }
-            ]},
-            options: modernOpt
+        // LINE CHART - 12 Month Trend
+        const lineData = months.map((_, i) => sum(globalData.filter(r => { const d = new Date(r.date); return d.getFullYear() === latestYear && d.getMonth() === i; })));
+        new Chart(document.getElementById('revLineChart'), {
+            type: 'line',
+            data: { labels: months, datasets: [{ data: lineData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }] },
+            options: { ...baseOpt, plugins: { legend: { display: false } } }
         });
 
-        // CENSUS CHART
-        window.cenCh = new Chart(document.getElementById('cenComparisonChart'), {
+        // YoY BARS
+        const barOpt = { ...baseOpt, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10 } } } };
+        new Chart(document.getElementById('revComparisonChart'), {
             type: 'bar',
-            data: { labels: ['Census Performance'], datasets: [
-                { label: `${latestYear}`, data: [cenC], backgroundColor: '#3b82f6', hoverBackgroundColor: '#2563eb' },
-                { label: `${prevYear}`, data: [cenP], backgroundColor: '#e2e8f0', hoverBackgroundColor: '#cbd5e1' }
-            ]},
-            options: modernOpt
+            data: { labels: ['Revenue'], datasets: [{ label: latestYear, data: [revC], backgroundColor: '#10b981' }, { label: prevYear, data: [revP], backgroundColor: '#e2e8f0' }] },
+            options: barOpt
+        });
+        new Chart(document.getElementById('cenComparisonChart'), {
+            type: 'bar',
+            data: { labels: ['Census'], datasets: [{ label: latestYear, data: [cenC], backgroundColor: '#3b82f6' }, { label: prevYear, data: [cenP], backgroundColor: '#e2e8f0' }] },
+            options: barOpt
         });
 
-        // AGE CHART (GRADIENT)
-        window.ageCh = new Chart(document.getElementById('ageChart'), {
+        // AGE BARS
+        new Chart(document.getElementById('ageChart'), {
             type: 'bar',
-            data: { labels: ['0-18','19-35','36-50','51+'], datasets: [{ 
-                data: [curData.filter(r=>Number(r.age)<=18).length, curData.filter(r=>Number(r.age)>18 && Number(r.age)<=35).length, curData.filter(r=>Number(r.age)>35 && Number(r.age)<=50).length, curData.filter(r=>Number(r.age)>50).length],
-                backgroundColor: '#1e293b'
-            }]},
-            options: { ...modernOpt, plugins: { legend: { display: false } } }
+            data: { labels: ['0-18','19-35','36-50','51+'], datasets: [{ data: [curData.filter(r=>Number(r.age)<=18).length, curData.filter(r=>Number(r.age)>18 && Number(r.age)<=35).length, curData.filter(r=>Number(r.age)>35 && Number(r.age)<=50).length, curData.filter(r=>Number(r.age)>50).length], backgroundColor: '#1e293b' }] },
+            options: baseOpt
         });
 
-        // GENDER CHART
-        window.genCh = new Chart(document.getElementById('genderChart'), {
+        // GENDER DOUGHNUT
+        new Chart(document.getElementById('genderChart'), {
             type: 'doughnut',
-            data: { labels: ['Male','Female'], datasets: [{ data: [curData.filter(r=>r.gender==='Male').length, curData.filter(r=>r.gender==='Female').length], backgroundColor: ['#3b82f6','#f472b6'], borderWidth: 0 }] },
-            options: { cutout: '80%', plugins: { legend: { position: 'right', labels: { usePointStyle: true } } } }
+            data: { labels: ['Male','Female'], datasets: [{ data: [curData.filter(r=>r.gender==='Male').length, curData.filter(r=>r.gender==='Female').length], backgroundColor: ['#3b82f6','#f472b6'] }] },
+            options: { ...baseOpt, cutout: '75%', plugins: { legend: { display: true, position: 'bottom' } } }
         });
     }
 
