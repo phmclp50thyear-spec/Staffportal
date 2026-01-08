@@ -11,23 +11,14 @@
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; min-height: 100vh; }
     #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
-    
-    /* Navigation */
     .glass-nav { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
     .nav-link { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.75rem; transition: 0.3s; letter-spacing: 0.1em; }
     .nav-link:hover, .nav-active { color: #10b981; }
-
-    /* Minimalist Elements */
     .metric-card { background: rgba(17, 24, 39, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; padding: 1.5rem; }
     .white-card { background: white; border-radius: 1rem; padding: 1.25rem; color: #1e293b; }
-    
-    /* Slicer */
-    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.2s; color: rgba(255,255,255,0.3); border-left: 2px solid transparent; text-transform: uppercase; letter-spacing: 0.05em; }
-    .month-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.2s; color: rgba(255,255,255,0.3); border-left: 2px solid transparent; text-transform: uppercase; }
     .month-btn.active { color: #10b981; border-left: 2px solid #10b981; background: rgba(16, 185, 129, 0.05); }
-
-    /* List Styling */
-    .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.05); padding: 8px 0; display: flex; justify-content: space-between; font-size: 12px; }
+    .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.05); padding: 10px 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     .procedure-item:last-child { border: none; }
   </style>
 </head>
@@ -38,7 +29,7 @@
   <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-900/40">
+        <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
           <svg class="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5"/></svg>
         </div>
         <h1 class="font-extrabold text-xs tracking-widest uppercase">Executive Health Dashboard</h1>
@@ -48,18 +39,17 @@
         <a href="dashboard.html" class="nav-link">RECORDS</a>
         <a href="reports.html" class="nav-link nav-active">REPORTS</a>
       </div>
-      <button onclick="logout()" class="text-[10px] font-bold text-red-500 tracking-widest hover:text-red-400">LOGOUT</button>
+      <button onclick="logout()" class="text-[10px] font-bold text-red-500 tracking-widest uppercase">Logout</button>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-20 text-emerald-400 font-light tracking-widest animate-pulse uppercase text-xs">Accessing Secure Records...</div>
+    <div id="loadingState" class="text-center py-20 text-emerald-400 font-light tracking-widest animate-pulse uppercase text-xs">Processing Global Data...</div>
 
     <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <div class="lg:col-span-2 space-y-6">
             <div id="monthPicker" class="space-y-1"></div>
-            
             <div class="metric-card border-l-2 border-emerald-500">
                 <p class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-1">VIP Census</p>
                 <h2 id="vipCount" class="text-3xl font-light">0</h2>
@@ -67,7 +57,6 @@
         </div>
 
         <div class="lg:col-span-10 space-y-6">
-            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="metric-card">
                     <div class="flex justify-between items-start">
@@ -81,7 +70,6 @@
                         <div id="revVariance"></div>
                     </div>
                 </div>
-
                 <div class="metric-card">
                     <div class="flex justify-between items-start">
                         <div>
@@ -166,6 +154,7 @@
         const curData = filterFn(latestYear);
         const preData = filterFn(prevYear);
         const sum = arr => arr.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+        
         const revC = sum(curData), revP = sum(preData);
         const cenC = curData.length, cenP = preData.length;
 
@@ -181,7 +170,7 @@
 
         renderVar('revVariance', revC - revP, '₱');
         renderVar('censusVariance', cenC - cenP, '');
-        renderProcedures(curData);
+        renderProcedures(curData); // This uses latest data
         renderCharts(curData);
     }
 
@@ -192,15 +181,26 @@
 
     function renderProcedures(data) {
         const counts = {};
-        data.forEach(r => { if(r.procedure) counts[r.procedure] = (counts[r.procedure] || 0) + 1; });
-        const top10 = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+        data.forEach(r => {
+            // Updated to look at 'procedures' column
+            const proc = r.procedures; 
+            if(proc) {
+                counts[proc] = (counts[proc] || 0) + 1;
+            }
+        });
+
+        // Sort largest to smallest
+        const top10 = Object.entries(counts)
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 10);
         
         const list = document.getElementById('procedureList');
-        list.innerHTML = top10.length ? '' : '<p class="text-xs text-slate-400 italic">No data</p>';
+        list.innerHTML = top10.length ? '' : '<p class="text-xs text-slate-400 italic">No procedures found in current filter.</p>';
+        
         top10.forEach(([name, count]) => {
             list.innerHTML += `<div class="procedure-item">
-                <span class="truncate pr-4 font-medium text-slate-700">${name}</span>
-                <span class="font-bold text-emerald-600">${count}</span>
+                <span class="truncate pr-4 font-semibold text-slate-700">${name}</span>
+                <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold">${count}</span>
             </div>`;
         });
     }
