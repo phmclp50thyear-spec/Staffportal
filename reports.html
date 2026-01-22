@@ -1,321 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Executive Health Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; min-height: 100vh; overflow-x: hidden; }
-    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
-    .glass-nav { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-    .nav-link { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.75rem; transition: 0.3s; letter-spacing: 0.1em; }
-    .nav-link:hover, .nav-active { color: #10b981; }
-    
-    .metric-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.5rem; }
-    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; }
-    
-    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.5rem; text-transform: uppercase; margin-bottom: 2px; }
-    .month-btn.active { color: white; background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Health Dashboard</title>
 
-    .growth-badge { padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
-    .growth-up { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-    .growth-down { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 10px 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .chart-container { position: relative; flex-grow: 1; min-height: 180px; width: 100%; }
-    
-    .doughnut-wrapper { position: relative; width: 100%; height: 100%; }
-    .doughnut-center-text { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
-  </style>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
+  color: white;
+}
+.glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(10px); border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.08); }
+.white { background: white; color: #1e293b; border-radius: 1.5rem; padding: 1.5rem; }
+.btn { font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 0.75rem; }
+.month-btn { width:100%; text-align:left; padding:6px 10px; font-size:10px; font-weight:700; opacity:.4; }
+.month-btn.active { background:#10b981; color:white; opacity:1; }
+.cal-day { padding:6px 0; border-radius:.5rem; background:rgba(255,255,255,.05); cursor:pointer; font-weight:700; }
+.cal-day:hover { background:#10b981; }
+.cal-active { background:#10b981; }
+</style>
 </head>
-<body>
 
-  <canvas id="bg-canvas"></canvas>
+<body class="min-h-screen">
 
-  <nav class="glass-nav sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg"><svg class="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5"/></svg></div>
-        <h1 class="font-extrabold text-sm tracking-tighter uppercase">Executive Health Dashboard</h1>
-      </div>
-      <div class="hidden md:flex items-center gap-10">
-        <a href="home.html" class="nav-link">HOME</a>
-        <a href="dashboard.html" class="nav-link">RECORDS</a>
-        <a href="reports.html" class="nav-link nav-active">REPORTS</a>
-      </div>
-      <button onclick="logout()" class="text-[10px] font-extrabold text-red-400 uppercase tracking-widest border border-red-400/30 px-4 py-2 rounded-lg hover:bg-red-400 hover:text-white transition">Logout</button>
+<nav class="glass sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <h1 class="font-extrabold tracking-widest text-sm">EXECUTIVE REPORTS</h1>
+    <div class="flex gap-2">
+      <button onclick="exportExcel()" class="btn bg-emerald-600">Excel</button>
+      <button onclick="exportPDF()" class="btn bg-slate-600">PDF</button>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light tracking-[0.2em] animate-pulse uppercase text-xs">Architecting Data Visualization...</div>
+<main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-    <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <div class="lg:col-span-2 space-y-6">
-            <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[60vh] overflow-y-auto"></div>
-            <div class="metric-card bg-emerald-900/40">
-                <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VIP Census</p>
-                <h2 id="vipCount" class="text-4xl font-extrabold">0</h2>
-            </div>
-        </div>
+<!-- LEFT PANEL -->
+<div class="lg:col-span-2 space-y-4">
+  <div id="monthPicker" class="glass p-2 space-y-1"></div>
 
-        <div class="lg:col-span-10 space-y-8">
-            
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Annual Revenue Performance Trend</p>
-                    <div class="chart-container"><canvas id="revLineChart"></canvas></div>
-                </div>
-                <div class="flex flex-col gap-6">
-                    <div class="metric-card flex-1">
-                        <div class="flex justify-between items-start mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Revenue</p><div id="revGrowthBadge"></div></div>
-                        <h2 id="valCurrentYear" class="text-3xl font-extrabold">₱0</h2>
-                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valPrevYearVal" class="font-bold">₱0</span> (Prev Year)</p>
-                    </div>
-                    <div class="metric-card flex-1">
-                        <div class="flex justify-between items-start mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Census</p><div id="cenGrowthBadge"></div></div>
-                        <h2 id="valCensusCurrent" class="text-3xl font-extrabold">0</h2>
-                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valCensusPrevVal" class="font-bold">0</span> (Prev Year)</p>
-                    </div>
-                </div>
-            </div>
+  <div class="glass p-3">
+    <p class="text-[9px] font-bold text-emerald-400 mb-2">CALENDAR</p>
+    <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-[10px]"></div>
+  </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Analysis (YoY Comparison)</p>
-                    <div class="chart-container"><canvas id="revComparisonChart"></canvas></div>
-                </div>
-                <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Census Analysis (YoY Comparison)</p>
-                    <div class="chart-container"><canvas id="cenComparisonChart"></canvas></div>
-                </div>
-            </div>
+  <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
+    <input id="vipToggle" type="checkbox" class="accent-emerald-500">
+    VIP ONLY
+  </label>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 white-card h-[400px]">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider border-b pb-2">Top 10 Procedures</p>
-                    <div id="procedureList" class="space-y-1 overflow-y-auto"></div>
-                </div>
-                <div class="white-card h-[400px]">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Age Demographics</p>
-                    <div class="chart-container"><canvas id="ageChart"></canvas></div>
-                </div>
-                <div class="white-card h-[400px]">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider text-center">Gender Distribution</p>
-                    <div class="doughnut-wrapper">
-                        <canvas id="genderChart"></canvas>
-                        <div class="doughnut-center-text">
-                            <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Total</p>
-                            <p id="totalGenderCensus" class="text-2xl font-extrabold text-slate-800">0</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="glass p-4">
+    <p class="text-[9px] font-bold text-emerald-400">VIP CENSUS</p>
+    <h2 id="vipCount" class="text-3xl font-extrabold">0</h2>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="lg:col-span-10 space-y-8">
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="white lg:col-span-2">
+    <p class="text-xs font-extrabold uppercase mb-2">Annual Revenue Trend</p>
+    <canvas id="revLineChart"></canvas>
+  </div>
+  <div class="glass p-4 space-y-4">
+    <div>
+      <p class="text-[10px]">Revenue</p>
+      <h2 id="revCur" class="text-2xl font-extrabold">₱0</h2>
+      <div id="revGrowth"></div>
     </div>
-  </main>
+    <div>
+      <p class="text-[10px]">Census</p>
+      <h2 id="cenCur" class="text-2xl font-extrabold">0</h2>
+      <div id="cenGrowth"></div>
+    </div>
+  </div>
+</div>
 
-  <script>
-    const canvas=document.getElementById('bg-canvas');const ctx=canvas.getContext('2d');let molecules=[];class Molecule{constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*.15;this.vy=(Math.random()-.5)*.15;this.scale=Math.random()*.5+.5}draw(){ctx.beginPath();ctx.arc(this.x,this.y,2*this.scale,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill()}update(){this.x+=this.vx;this.y+=this.vy;if(this.x>canvas.width||this.x<0)this.vx*=-1;if(this.y>canvas.height||this.y<0)this.vy*=-1}}function initBG(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;molecules=[];for(let i=0;i<15;i++)molecules.push(new Molecule())}function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);molecules.forEach(m=>{m.update();m.draw()});requestAnimationFrame(animate)}initBG();animate();
+<div class="white">
+  <p class="text-xs font-extrabold uppercase mb-2">Daily Revenue (Selected Month)</p>
+  <canvas id="dailyChart"></canvas>
+</div>
 
-    let globalData = [];
-    let latestYear, prevYear;
-    let selectedMonthIndex = null;
-    const monthsShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const monthsFull = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    const db = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co','sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+  <div class="white"><canvas id="revYoY"></canvas></div>
+  <div class="white"><canvas id="cenYoY"></canvas></div>
+</div>
 
-    async function init() {
-        try {
-            const { data, error } = await db.from('patient_records').select('*');
-            if (error) throw error;
-            globalData = data || [];
-            const years = [...new Set(globalData.map(r => new Date(r.date).getFullYear()))].sort((a,b) => b-a);
-            latestYear = years[0] || new Date().getFullYear();
-            prevYear = years[1] || latestYear - 1;
-            renderMonthPicker(); 
-            updateDashboard();
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('reportContent').classList.remove('hidden');
-        } catch (e) { document.getElementById('loadingState').innerText = "Error: " + e.message; }
-    }
+</div>
+</main>
 
-    function renderMonthPicker() {
-        const p = document.getElementById('monthPicker'); p.innerHTML = '';
-        const allBtn = document.createElement('button');
-        allBtn.className = `month-btn ${selectedMonthIndex === null ? 'active' : ''}`;
-        allBtn.innerText = 'Overall View';
-        allBtn.onclick = () => { selectedMonthIndex = null; renderMonthPicker(); updateDashboard(); };
-        p.appendChild(allBtn);
-        monthsFull.forEach((m, i) => {
-            const btn = document.createElement('button');
-            btn.className = `month-btn ${i === selectedMonthIndex ? 'active' : ''}`;
-            btn.innerText = m;
-            btn.onclick = () => { selectedMonthIndex = (selectedMonthIndex === i) ? null : i; renderMonthPicker(); updateDashboard(); };
-            p.appendChild(btn);
-        });
-    }
+<script>
+const db = supabase.createClient(
+  'https://xpdtzvxjlguhcxkgowsg.supabase.co',
+  'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
+);
 
-    function updateDashboard() {
-        const filterFn = (yr) => globalData.filter(r => {
-            const d = new Date(r.date);
-            return d.getFullYear() === yr && (selectedMonthIndex === null || d.getMonth() === selectedMonthIndex);
-        });
+let data=[], year, prevYear, month=null, day=null, vipOnly=false;
+const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-        const cur = filterFn(latestYear), pre = filterFn(prevYear);
-        const sum = arr => arr.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
-        const revC = sum(cur), revP = sum(pre), cenC = cur.length, cenP = pre.length;
+async function init(){
+  const res=await db.from('patient_records').select('*');
+  data=res.data||[];
+  const yrs=[...new Set(data.map(r=>new Date(r.date).getFullYear()))].sort((a,b)=>b-a);
+  year=yrs[0]; prevYear=yrs[1]||year-1;
+  renderMonths(); update();
+}
+init();
 
-        document.getElementById('valCurrentYear').innerText = `₱${revC.toLocaleString()}`;
-        document.getElementById('valPrevYearVal').innerText = `₱${revP.toLocaleString()}`;
-        document.getElementById('valCensusCurrent').innerText = cenC.toLocaleString();
-        document.getElementById('valCensusPrevVal').innerText = cenP.toLocaleString();
-        document.getElementById('totalGenderCensus').innerText = cenC.toLocaleString();
+function renderMonths(){
+  const el=document.getElementById('monthPicker'); el.innerHTML='';
+  const all=document.createElement('button');
+  all.className=`month-btn ${month===null?'active':''}`;
+  all.innerText='Overall'; all.onclick=()=>{month=null;day=null;update();};
+  el.appendChild(all);
+  months.forEach((m,i)=>{
+    const b=document.createElement('button');
+    b.className=`month-btn ${month===i?'active':''}`;
+    b.innerText=m;
+    b.onclick=()=>{month=i;day=null;update();};
+    el.appendChild(b);
+  });
+}
 
-        const calcG = (c, p, id) => {
-            const pct = p > 0 ? ((c - p) / p * 100).toFixed(1) : (c > 0 ? '100' : '0');
-            document.getElementById(id).innerHTML = `<span class="growth-badge ${pct >= 0 ? 'growth-up' : 'growth-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
-        };
-        calcG(revC, revP, 'revGrowthBadge'); calcG(cenC, cenP, 'cenGrowthBadge');
+function renderCalendar(){
+  const el=document.getElementById('calendarGrid'); el.innerHTML='';
+  if(month===null){ el.innerHTML='<p class="col-span-7 opacity-40">Select month</p>'; return;}
+  const days=new Date(year,month+1,0).getDate();
+  for(let d=1;d<=days;d++){
+    const c=document.createElement('div');
+    c.className=`cal-day ${day===d?'cal-active':''}`;
+    c.innerText=d;
+    c.onclick=()=>{day=d;update();};
+    el.appendChild(c);
+  }
+}
 
-        const vipCount = cur.filter(r => r.payment_type?.toLowerCase() === 'company' && r.guarantor?.toLowerCase() === 'vip').length;
-        document.getElementById('vipCount').innerText = vipCount;
+function filter(y){
+  return data.filter(r=>{
+    const d=new Date(r.date);
+    if(d.getFullYear()!==y) return false;
+    if(month!==null && d.getMonth()!==month) return false;
+    if(day!==null && d.getDate()!==day) return false;
+    if(vipOnly && !(r.payment_type?.toLowerCase()==='company' && r.guarantor?.toLowerCase()==='vip')) return false;
+    return true;
+  });
+}
 
-        renderProcedures(cur);
-        renderCharts(cur, pre, revC, revP, cenC, cenP);
-    }
+function update(){
+  renderCalendar();
+  const cur=filter(year), pre=filter(prevYear);
+  const sum=a=>a.reduce((s,r)=>s+(+r.amount||0),0);
+  const rc=sum(cur), rp=sum(pre);
+  document.getElementById('revCur').innerText=`₱${rc.toLocaleString()}`;
+  document.getElementById('cenCur').innerText=cur.length;
+  document.getElementById('vipCount').innerText=cur.filter(r=>r.payment_type==='Company'&&r.guarantor==='VIP').length;
 
-    function renderProcedures(data) {
-        const counts = {}; data.forEach(r => { if(r.procedures) counts[r.procedures] = (counts[r.procedures] || 0) + 1; });
-        const top = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
-        const list = document.getElementById('procedureList');
-        list.innerHTML = top.length ? '' : '<p class="text-xs text-slate-400 italic text-center mt-10">No records</p>';
-        top.forEach(([n, c]) => {
-            list.innerHTML += `<div class="procedure-item"><span class="truncate pr-4 font-bold text-slate-600">${n}</span><span class="text-emerald-500 font-extrabold">${c}</span></div>`;
-        });
-    }
+  document.getElementById('revGrowth').innerText = rp ? `${(((rc-rp)/rp)*100).toFixed(1)}%` : '—';
+  document.getElementById('cenGrowth').innerText = pre.length ? `${(((cur.length-pre.length)/pre.length)*100).toFixed(1)}%` : '—';
 
-    function renderCharts(cur, pre, revC, revP, cenC, cenP) {
-        Chart.helpers.each(Chart.instances, (i) => i.destroy());
-        
-        const formatPHP = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+  drawCharts(cur,pre);
+}
 
-        const opt = { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } }, 
-            scales: { 
-                y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 9 } } }, 
-                x: { grid: { display: false }, ticks: { font: { size: 9 } } } 
-            } 
-        };
+document.getElementById('vipToggle').onchange=e=>{vipOnly=e.target.checked;update();};
 
-        // 1. TREND LINE (With Currency)
-        const yearlyRev = monthsShort.map((_, i) => globalData.filter(r => {
-            const d = new Date(r.date); return d.getFullYear() === latestYear && d.getMonth() === i;
-        }).reduce((a, r) => a + (parseFloat(r.amount) || 0), 0));
-        
-        new Chart(document.getElementById('revLineChart'), { 
-            type: 'line', 
-            data: { labels: monthsShort, datasets: [{ data: yearlyRev, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointRadius: 3 }] }, 
-            options: {
-                ...opt,
-                plugins: { tooltip: { callbacks: { label: (ctx) => `Revenue: ${formatPHP(ctx.parsed.y)}` } } },
-                scales: {
-                    y: { ...opt.scales.y, ticks: { ...opt.scales.y.ticks, callback: (v) => '₱' + v.toLocaleString() } },
-                    x: opt.scales.x
-                }
-            }
-        });
+function drawCharts(cur,pre){
+  Chart.helpers.each(Chart.instances,i=>i.destroy());
 
-        // 2. REVENUE YoY (Fixed side-by-side bars + Currency)
-        new Chart(document.getElementById('revComparisonChart'), {
-            type: 'bar',
-            data: { 
-                labels: ['Annual Revenue'], 
-                datasets: [
-                    { label: latestYear.toString(), data: [revC], backgroundColor: '#10b981', borderRadius: 8, barThickness: 45 },
-                    { label: prevYear.toString(), data: [revP], backgroundColor: '#d4af37', borderRadius: 8, barThickness: 45 }
-                ] 
-            },
-            options: { 
-                ...opt, 
-                plugins: { 
-                    legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10, weight: '600' } } },
-                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatPHP(ctx.parsed.y)}` } }
-                },
-                scales: {
-                    y: { ...opt.scales.y, ticks: { ...opt.scales.y.ticks, callback: (v) => '₱' + v.toLocaleString() } },
-                    x: opt.scales.x
-                }
-            }
-        });
+  new Chart(revLineChart,{
+    type:'line',
+    data:{labels:months,
+      datasets:[{data:months.map((_,i)=>data.filter(r=>new Date(r.date).getFullYear()===year&&new Date(r.date).getMonth()===i).reduce((s,r)=>s+(+r.amount||0),0)),borderColor:'#10b981'}]}
+  });
 
-        // 3. CENSUS YoY (Fixed side-by-side bars)
-        new Chart(document.getElementById('cenComparisonChart'), {
-            type: 'bar',
-            data: { 
-                labels: ['Total Census'], 
-                datasets: [
-                    { label: latestYear.toString(), data: [cenC], backgroundColor: '#3b82f6', borderRadius: 8, barThickness: 45 },
-                    { label: prevYear.toString(), data: [cenP], backgroundColor: '#94a3b8', borderRadius: 8, barThickness: 45 }
-                ] 
-            },
-            options: { 
-                ...opt, 
-                plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10, weight: '600' } } } } 
-            }
-        });
+  if(month!==null){
+    const days=new Date(year,month+1,0).getDate();
+    new Chart(dailyChart,{
+      type:'line',
+      data:{labels:[...Array(days).keys()].map(i=>i+1),
+      datasets:[{data:[...Array(days)].map((_,i)=>cur.filter(r=>new Date(r.date).getDate()===i+1).reduce((s,r)=>s+(+r.amount||0),0)),borderColor:'#22c55e'}]}
+    );
+  }
+}
 
-        // 4. AGE (Rounded Bar)
-        new Chart(document.getElementById('ageChart'), { 
-            type: 'bar', 
-            data: { 
-                labels: ['0-18','19-35','36-50','51+'], 
-                datasets: [{ 
-                    data: [
-                        cur.filter(r=>Number(r.age)<=18).length, 
-                        cur.filter(r=>Number(r.age)>18 && Number(r.age)<=35).length, 
-                        cur.filter(r=>Number(r.age)>35 && Number(r.age)<=50).length, 
-                        cur.filter(r=>Number(r.age)>50).length
-                    ], 
-                    backgroundColor: '#1e293b', 
-                    borderRadius: 6 
-                }] 
-            }, 
-            options: opt 
-        });
+function exportExcel(){
+  XLSX.writeFile(XLSX.utils.book_new(), 'Report.xlsx');
+}
 
-        // 5. ENHANCED DOUGHNUT (Premium modern ring)
-        new Chart(document.getElementById('genderChart'), {
-            type: 'doughnut',
-            data: { 
-                labels: ['Male','Female'], 
-                datasets: [{ 
-                    data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], 
-                    backgroundColor: ['#0ea5e9','#f472b6'], 
-                    hoverOffset: 15, 
-                    borderWidth: 0, 
-                    borderRadius: 10 
-                }] 
-            },
-            options: { 
-                ...opt, 
-                cutout: '80%', 
-                plugins: { 
-                    legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { size: 11, weight: '700' } } } 
-                } 
-            }
-        });
-    }
-
-    async function logout() { await db.auth.signOut(); window.location.href = "index.html"; }
-    init();
-  </script>
+function exportPDF(){
+  const d=new jspdf.jsPDF();
+  d.text('Executive Report',20,20);
+  d.save('Report.pdf');
+}
+</script>
 </body>
 </html>
