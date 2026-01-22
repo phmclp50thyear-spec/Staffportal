@@ -1,206 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Executive Health Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
-  color: white;
-}
-.glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(10px); border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.08); }
-.white { background: white; color: #1e293b; border-radius: 1.5rem; padding: 1.5rem; }
-.btn { font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 0.75rem; }
-.month-btn { width:100%; text-align:left; padding:6px 10px; font-size:10px; font-weight:700; opacity:.4; }
-.month-btn.active { background:#10b981; color:white; opacity:1; }
-.cal-day { padding:6px 0; border-radius:.5rem; background:rgba(255,255,255,.05); cursor:pointer; font-weight:700; }
-.cal-day:hover { background:#10b981; }
-.cal-active { background:#10b981; }
-</style>
+  <!-- SheetJS (Excel export) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+<body class="bg-gray-100 min-h-screen">
 
-<body class="min-h-screen">
-
-<nav class="glass sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-    <h1 class="font-extrabold tracking-widest text-sm">EXECUTIVE REPORTS</h1>
-    <div class="flex gap-2">
-      <button onclick="exportExcel()" class="btn bg-emerald-600">Excel</button>
-      <button onclick="exportPDF()" class="btn bg-slate-600">PDF</button>
-    </div>
+<!-- NAVBAR -->
+<nav class="bg-white shadow px-6 py-4 flex justify-between items-center">
+  <div class="flex items-center gap-4">
+    <img src="https://i.imgur.com/VbZKWAf.png" class="h-10" />
+    <span class="text-xl font-semibold">Reports</span>
+  </div>
+  <div class="flex gap-4">
+    <a href="dashboard.html" class="text-gray-600 hover:text-black">Dashboard</a>
+    <a href="patients.html" class="text-gray-600 hover:text-black">Patients</a>
+    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
   </div>
 </nav>
 
-<main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- CONTENT -->
+<div class="p-6 space-y-6">
 
-<!-- LEFT PANEL -->
-<div class="lg:col-span-2 space-y-4">
-  <div id="monthPicker" class="glass p-2 space-y-1"></div>
+  <!-- FILTERS -->
+  <div class="bg-white rounded shadow p-4 grid md:grid-cols-4 gap-4 items-end">
 
-  <div class="glass p-3">
-    <p class="text-[9px] font-bold text-emerald-400 mb-2">CALENDAR</p>
-    <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-[10px]"></div>
-  </div>
-
-  <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
-    <input id="vipToggle" type="checkbox" class="accent-emerald-500">
-    VIP ONLY
-  </label>
-
-  <div class="glass p-4">
-    <p class="text-[9px] font-bold text-emerald-400">VIP CENSUS</p>
-    <h2 id="vipCount" class="text-3xl font-extrabold">0</h2>
-  </div>
-</div>
-
-<!-- RIGHT PANEL -->
-<div class="lg:col-span-10 space-y-8">
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="white lg:col-span-2">
-    <p class="text-xs font-extrabold uppercase mb-2">Annual Revenue Trend</p>
-    <canvas id="revLineChart"></canvas>
-  </div>
-  <div class="glass p-4 space-y-4">
+    <!-- CUSTOM CALENDAR -->
     <div>
-      <p class="text-[10px]">Revenue</p>
-      <h2 id="revCur" class="text-2xl font-extrabold">₱0</h2>
-      <div id="revGrowth"></div>
+      <label class="text-sm font-medium">Select Month</label>
+      <select id="monthSelect" class="w-full border rounded p-2"></select>
     </div>
-    <div>
-      <p class="text-[10px]">Census</p>
-      <h2 id="cenCur" class="text-2xl font-extrabold">0</h2>
-      <div id="cenGrowth"></div>
+
+    <!-- VIP TOGGLE -->
+    <div class="flex items-center gap-2">
+      <input type="checkbox" id="vipOnly" class="h-5 w-5" />
+      <label for="vipOnly" class="font-medium">VIP only</label>
     </div>
+
+    <!-- EXPORT -->
+    <div class="flex gap-2">
+      <button onclick="exportExcel()" class="bg-green-600 text-white px-4 py-2 rounded">Excel</button>
+      <button onclick="window.print()" class="bg-gray-700 text-white px-4 py-2 rounded">PDF</button>
+    </div>
+
   </div>
-</div>
 
-<div class="white">
-  <p class="text-xs font-extrabold uppercase mb-2">Daily Revenue (Selected Month)</p>
-  <canvas id="dailyChart"></canvas>
-</div>
+  <!-- CHART -->
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-4">Daily Revenue Trend</h2>
+    <canvas id="dailyChart" height="120"></canvas>
+  </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-  <div class="white"><canvas id="revYoY"></canvas></div>
-  <div class="white"><canvas id="cenYoY"></canvas></div>
-</div>
+  <!-- TABLE -->
+  <div class="bg-white rounded shadow p-4 overflow-x-auto">
+    <table class="min-w-full text-sm" id="reportTable">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-2">Date</th>
+          <th class="p-2">Patient</th>
+          <th class="p-2">Payment</th>
+          <th class="p-2">Guarantor</th>
+          <th class="p-2">Amount</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
 </div>
-</main>
 
 <script>
-const db = supabase.createClient(
-  'https://xpdtzvxjlguhcxkgowsg.supabase.co',
-  'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN'
+/* ---------------- SUPABASE ---------------- */
+const supabase = supabase.createClient(
+  'YOUR_SUPABASE_URL'https://xpdtzvxjlguhcxkgowsg.supabase.co',
+  'YOUR_SUPABASE_ANON_KEY'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN',
 );
 
-let data=[], year, prevYear, month=null, day=null, vipOnly=false;
-const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-async function init(){
-  const res=await db.from('patient_records').select('*');
-  data=res.data||[];
-  const yrs=[...new Set(data.map(r=>new Date(r.date).getFullYear()))].sort((a,b)=>b-a);
-  year=yrs[0]; prevYear=yrs[1]||year-1;
-  renderMonths(); update();
-}
-init();
-
-function renderMonths(){
-  const el=document.getElementById('monthPicker'); el.innerHTML='';
-  const all=document.createElement('button');
-  all.className=`month-btn ${month===null?'active':''}`;
-  all.innerText='Overall'; all.onclick=()=>{month=null;day=null;update();};
-  el.appendChild(all);
-  months.forEach((m,i)=>{
-    const b=document.createElement('button');
-    b.className=`month-btn ${month===i?'active':''}`;
-    b.innerText=m;
-    b.onclick=()=>{month=i;day=null;update();};
-    el.appendChild(b);
-  });
+/* ---------------- LOGOUT ---------------- */
+async function logout() {
+  await supabase.auth.signOut();
+  window.location.href = 'index.html';
 }
 
-function renderCalendar(){
-  const el=document.getElementById('calendarGrid'); el.innerHTML='';
-  if(month===null){ el.innerHTML='<p class="col-span-7 opacity-40">Select month</p>'; return;}
-  const days=new Date(year,month+1,0).getDate();
-  for(let d=1;d<=days;d++){
-    const c=document.createElement('div');
-    c.className=`cal-day ${day===d?'cal-active':''}`;
-    c.innerText=d;
-    c.onclick=()=>{day=d;update();};
-    el.appendChild(c);
+/* ---------------- MONTH DROPDOWN ---------------- */
+const monthSelect = document.getElementById('monthSelect');
+const months = [];
+
+for (let y = 2024; y <= 2025; y++) {
+  for (let m = 0; m < 12; m++) {
+    const date = new Date(y, m, 1);
+    const value = date.toISOString().slice(0, 7);
+    const label = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    months.push({ value, label });
   }
 }
 
-function filter(y){
-  return data.filter(r=>{
-    const d=new Date(r.date);
-    if(d.getFullYear()!==y) return false;
-    if(month!==null && d.getMonth()!==month) return false;
-    if(day!==null && d.getDate()!==day) return false;
-    if(vipOnly && !(r.payment_type?.toLowerCase()==='company' && r.guarantor?.toLowerCase()==='vip')) return false;
-    return true;
+months.forEach(m => {
+  const opt = document.createElement('option');
+  opt.value = m.value;
+  opt.textContent = m.label;
+  monthSelect.appendChild(opt);
+});
+
+monthSelect.value = '2024-12';
+
+/* ---------------- DATA LOAD ---------------- */
+let chart;
+
+async function loadReport() {
+  const [year, month] = monthSelect.value.split('-');
+  const start = `${year}-${month}-01T00:00:00+08`;
+  const end = `${year}-${month}-31T23:59:59+08`;
+  const vipOnly = document.getElementById('vipOnly').checked;
+
+  let query = supabase
+    .from('patient_records')
+    .select('date, patient_name, payment_type, guarantor, amount')
+    .gte('date', start)
+    .lte('date', end)
+    .order('date');
+
+  if (vipOnly) query = query.eq('guarantor', 'VIP');
+
+  const { data } = await query;
+
+  renderTable(data || []);
+  renderChart(data || []);
+}
+
+/* ---------------- TABLE ---------------- */
+function renderTable(data) {
+  const tbody = document.querySelector('#reportTable tbody');
+  tbody.innerHTML = '';
+
+  data.forEach(r => {
+    tbody.innerHTML += `
+      <tr class="border-b">
+        <td class="p-2">${new Date(r.date).toLocaleDateString()}</td>
+        <td class="p-2">${r.patient_name}</td>
+        <td class="p-2">${r.payment_type}</td>
+        <td class="p-2">${r.guarantor}</td>
+        <td class="p-2 text-right">₱${r.amount.toLocaleString()}</td>
+      </tr>`;
   });
 }
 
-function update(){
-  renderCalendar();
-  const cur=filter(year), pre=filter(prevYear);
-  const sum=a=>a.reduce((s,r)=>s+(+r.amount||0),0);
-  const rc=sum(cur), rp=sum(pre);
-  document.getElementById('revCur').innerText=`₱${rc.toLocaleString()}`;
-  document.getElementById('cenCur').innerText=cur.length;
-  document.getElementById('vipCount').innerText=cur.filter(r=>r.payment_type==='Company'&&r.guarantor==='VIP').length;
-
-  document.getElementById('revGrowth').innerText = rp ? `${(((rc-rp)/rp)*100).toFixed(1)}%` : '—';
-  document.getElementById('cenGrowth').innerText = pre.length ? `${(((cur.length-pre.length)/pre.length)*100).toFixed(1)}%` : '—';
-
-  drawCharts(cur,pre);
-}
-
-document.getElementById('vipToggle').onchange=e=>{vipOnly=e.target.checked;update();};
-
-function drawCharts(cur,pre){
-  Chart.helpers.each(Chart.instances,i=>i.destroy());
-
-  new Chart(revLineChart,{
-    type:'line',
-    data:{labels:months,
-      datasets:[{data:months.map((_,i)=>data.filter(r=>new Date(r.date).getFullYear()===year&&new Date(r.date).getMonth()===i).reduce((s,r)=>s+(+r.amount||0),0)),borderColor:'#10b981'}]}
+/* ---------------- CHART ---------------- */
+function renderChart(data) {
+  const daily = {};
+  data.forEach(r => {
+    const d = new Date(r.date).getDate();
+    daily[d] = (daily[d] || 0) + r.amount;
   });
 
-  if(month!==null){
-    const days=new Date(year,month+1,0).getDate();
-    new Chart(dailyChart,{
-      type:'line',
-      data:{labels:[...Array(days).keys()].map(i=>i+1),
-      datasets:[{data:[...Array(days)].map((_,i)=>cur.filter(r=>new Date(r.date).getDate()===i+1).reduce((s,r)=>s+(+r.amount||0),0)),borderColor:'#22c55e'}]}
-    );
-  }
+  const labels = Object.keys(daily);
+  const values = Object.values(daily);
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(document.getElementById('dailyChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'Daily Revenue', data: values, fill: false }]
+    }
+  });
 }
 
-function exportExcel(){
-  XLSX.writeFile(XLSX.utils.book_new(), 'Report.xlsx');
+/* ---------------- EXPORT ---------------- */
+function exportExcel() {
+  const table = document.getElementById('reportTable');
+  const wb = XLSX.utils.table_to_book(table, { sheet: 'Report' });
+  XLSX.writeFile(wb, 'monthly-report.xlsx');
 }
 
-function exportPDF(){
-  const d=new jspdf.jsPDF();
-  d.text('Executive Report',20,20);
-  d.save('Report.pdf');
-}
+/* ---------------- EVENTS ---------------- */
+monthSelect.addEventListener('change', loadReport);
+document.getElementById('vipOnly').addEventListener('change', loadReport);
+
+loadReport();
 </script>
+
 </body>
 </html>
