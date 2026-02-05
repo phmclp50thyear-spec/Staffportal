@@ -14,8 +14,6 @@
     .fab-label { background: white; padding: 8px 16px; border-radius: 12px; margin-right: 15px; font-weight: bold; font-size: 12px; color: var(--corp-green); box-shadow: 0 4px 12px rgba(0,0,0,0.1); opacity: 0; transform: translateX(20px); transition: all 0.3s ease; pointer-events: none; }
     .fab-container:hover .fab-label { opacity: 1; transform: translateX(0); }
     #entryModal, #successOverlay { display: none; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 100; position: fixed; inset: 0; align-items: center; justify-content: center; }
-    .view-section { display: none; }
-    .view-active { display: block; }
     .custom-scrollbar::-webkit-scrollbar { height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
   </style>
@@ -58,7 +56,7 @@
             <tr class="bg-gray-50/50 border-b border-gray-100">
               <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
               <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient & Type</th>
-              <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Procedures / Add-on</th>
+              <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Procedures / Add-ons</th>
               <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Doctor & Guarantor</th>
               <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Amount</th>
               <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Actions</th>
@@ -100,6 +98,7 @@
             </select>
           </div>
         </div>
+
         <div id="procedureContainer" class="space-y-2">
           <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Procedures</label>
           <div class="flex gap-2">
@@ -107,7 +106,15 @@
             <button type="button" onclick="addProcedureRow()" class="px-4 bg-green-50 text-[#007941] rounded-2xl font-bold">+</button>
           </div>
         </div>
-        <input type="text" list="addonOptions" id="f-addon" placeholder="Add-on (Optional)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+
+        <div id="addonContainer" class="space-y-2">
+          <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Add-ons (Optional)</label>
+          <div class="flex gap-2">
+            <input type="text" list="addonOptions" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+            <button type="button" onclick="handleAddOnRow()" class="px-4 bg-blue-50 text-blue-600 rounded-2xl font-bold">+</button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input type="text" id="f-doctor" placeholder="Doctor's Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
           <input type="number" step="0.01" id="f-amount" placeholder="Amount (₱)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
@@ -149,6 +156,10 @@
         tbody.innerHTML = records.map(r => {
           const typeColor = r.payment_type === 'Cash' ? 'bg-orange-100 text-orange-700' : r.payment_type === 'HMO' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
           const procs = r.procedures.map(p => `<span class="inline-block px-2 py-0.5 mr-1 mb-1 bg-green-50 text-[#007941] rounded text-[10px] font-bold border border-green-100">${p}</span>`).join('');
+          
+          // Render multiple add-on tags
+          const addons = Array.isArray(r.add_on) ? r.add_on.map(a => `<div class="mt-1 text-[9px] font-bold text-gray-400 uppercase">ADD-ON: ${a}</div>`).join('') : '';
+
           return `<tr>
             <td class="px-6 py-4 text-xs text-gray-500 font-medium">${new Date(r.date).toLocaleDateString()}</td>
             <td class="px-6 py-4">
@@ -158,7 +169,7 @@
                 <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${typeColor}">${r.payment_type}</span>
               </div>
             </td>
-            <td class="px-6 py-4">${procs}${r.add_on ? `<div class="mt-1 text-[9px] font-bold text-gray-400">ADD-ON: ${r.add_on}</div>` : ''}</td>
+            <td class="px-6 py-4">${procs}${addons}</td>
             <td class="px-6 py-4">
               <div class="text-xs font-bold text-gray-700">Dr. ${r.doctor_name}</div>
               <div class="text-[10px] text-gray-400 font-medium mt-0.5 italic">G: ${r.guarantor || 'None'}</div>
@@ -191,14 +202,29 @@
         document.getElementById('f-doctor').value = r.doctor_name;
         document.getElementById('f-amount').value = r.amount;
         document.getElementById('f-guarantor').value = r.guarantor === 'N/A' ? '' : r.guarantor;
-        document.getElementById('f-addon').value = r.add_on || '';
-        const container = document.getElementById('procedureContainer');
-        container.innerHTML = '<label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Procedures</label>';
+        
+        // Populate Procedures
+        const pContainer = document.getElementById('procedureContainer');
+        pContainer.innerHTML = '<label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Procedures</label>';
         r.procedures.forEach((p, i) => {
           const div = document.createElement('div'); div.className = "flex gap-2 mt-2";
           div.innerHTML = `<input type="text" list="procedureOptions" value="${p}" required class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">${i === 0 ? `<button type="button" onclick="addProcedureRow()" class="px-4 bg-green-50 text-[#007941] rounded-2xl font-bold">+</button>` : `<button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-600 rounded-2xl font-bold">×</button>`}`;
-          container.appendChild(div);
+          pContainer.appendChild(div);
         });
+
+        // Populate Add-ons
+        const aContainer = document.getElementById('addonContainer');
+        aContainer.innerHTML = '<label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Add-ons (Optional)</label>';
+        const addOnList = Array.isArray(r.add_on) ? r.add_on : [];
+        if (addOnList.length === 0) {
+            handleAddOnRow();
+        } else {
+            addOnList.forEach((a, i) => {
+                const div = document.createElement('div'); div.className = "flex gap-2 mt-2";
+                div.innerHTML = `<input type="text" list="addonOptions" value="${a}" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">${i === 0 ? `<button type="button" onclick="handleAddOnRow()" class="px-4 bg-blue-50 text-blue-600 rounded-2xl font-bold">+</button>` : `<button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-600 rounded-2xl font-bold">×</button>`}`;
+                aContainer.appendChild(div);
+            });
+        }
         toggleModal(true);
       };
 
@@ -211,11 +237,17 @@
 
       window.toggleModal = (show) => {
         document.getElementById('entryModal').style.display = show ? 'flex' : 'none';
-        if (!show) { document.getElementById('transactionForm').reset(); document.getElementById('f-id').value = ''; }
+        if (!show) { 
+            document.getElementById('transactionForm').reset(); 
+            document.getElementById('f-id').value = ''; 
+        }
         else if (!document.getElementById('f-id').value) {
           document.getElementById('modalTitle').innerText = "New Transaction";
           const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
           document.getElementById('f-date').value = now.toISOString().slice(0,16);
+          // Reset containers to one empty row
+          document.getElementById('procedureContainer').innerHTML = '<label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Procedures</label><div class="flex gap-2 mt-2"><input type="text" list="procedureOptions" required class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none"><button type="button" onclick="addProcedureRow()" class="px-4 bg-green-50 text-[#007941] rounded-2xl font-bold">+</button></div>';
+          document.getElementById('addonContainer').innerHTML = '<label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Add-ons (Optional)</label><div class="flex gap-2 mt-2"><input type="text" list="addonOptions" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none"><button type="button" onclick="handleAddOnRow()" class="px-4 bg-blue-50 text-blue-600 rounded-2xl font-bold">+</button></div>';
         }
       };
 
@@ -225,10 +257,18 @@
         document.getElementById('procedureContainer').appendChild(div);
       };
 
+      window.handleAddOnRow = () => {
+        const div = document.createElement('div'); div.className = "flex gap-2 mt-2";
+        div.innerHTML = `<input type="text" list="addonOptions" placeholder="Entry" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none"><button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-600 rounded-2xl font-bold">×</button>`;
+        document.getElementById('addonContainer').appendChild(div);
+      };
+
       document.getElementById('transactionForm').onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('f-id').value;
         const procedures = Array.from(document.querySelectorAll('#procedureContainer input')).map(i => i.value).filter(v => v.trim());
+        const add_on = Array.from(document.querySelectorAll('#addonContainer input')).map(i => i.value).filter(v => v.trim());
+        
         const { data: { user } } = await supabase.auth.getUser();
         const payload = {
           date: document.getElementById('f-date').value,
@@ -236,7 +276,7 @@
           age: parseInt(document.getElementById('f-age').value),
           gender: document.getElementById('f-gender').value,
           procedures,
-          add_on: document.getElementById('f-addon').value || null,
+          add_on, // This is now an array
           doctor_name: document.getElementById('f-doctor').value,
           payment_type: document.getElementById('f-payment').value,
           guarantor: document.getElementById('f-guarantor').value || 'N/A',
