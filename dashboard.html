@@ -35,6 +35,9 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
 
+  <datalist id="procedureOptions"></datalist>
+  <datalist id="addonOptions"></datalist>
+
   <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
       <div class="flex items-center gap-4">
@@ -63,7 +66,7 @@
               <tr class="bg-gray-50/50 border-b border-gray-100">
                 <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
                 <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient & Type</th>
-                <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Procedures</th>
+                <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Procedures / Add-on</th>
                 <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Doctor & Guarantor</th>
                 <th class="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Amount</th>
               </tr>
@@ -123,13 +126,18 @@
         </div>
 
         <div>
-          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Package/Procedure</label>
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Package / Procedure</label>
           <div id="procedureContainer" class="space-y-2">
             <div class="flex gap-2">
-              <input type="text" placeholder="Entry 1" required class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
+              <input type="text" list="procedureOptions" placeholder="Select Package" required class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
               <button type="button" onclick="addProcedureRow()" class="px-4 bg-green-50 text-[#007941] rounded-2xl font-bold">+</button>
             </div>
           </div>
+        </div>
+
+        <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1 block">Add-on (Optional)</label>
+            <input type="text" list="addonOptions" id="f-addon" placeholder="Search Add-on..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none">
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,9 +160,26 @@
 
       supabase.auth.onAuthStateChange((event, session) => {
         if (!session) window.location.replace("index.html");
-        // We trigger fetchRecords immediately if session is active
-        else fetchRecords();
+        else {
+            fetchRecords();
+            fetchDropdowns();
+        }
       });
+
+      // NEW: Fetch dropdown options from Supabase
+      async function fetchDropdowns() {
+        // Fetch Procedures
+        const { data: procs } = await supabase.from('procedures').select('name').order('name');
+        if (procs) {
+            document.getElementById('procedureOptions').innerHTML = procs.map(p => `<option value="${p.name}">`).join('');
+        }
+
+        // Fetch Add-ons
+        const { data: addons } = await supabase.from('addons').select('name').order('name');
+        if (addons) {
+            document.getElementById('addonOptions').innerHTML = addons.map(a => `<option value="${a.name}">`).join('');
+        }
+      }
 
       async function fetchRecords() {
         const { data, error } = await supabase.from('patient_records').select('*').order('date', { ascending: false });
@@ -163,6 +188,8 @@
         
         if (data) data.forEach(r => {
           const procs = r.procedures.map(p => `<span class="inline-block px-2 py-0.5 mr-1 mb-1 bg-green-50 text-[#007941] rounded text-[10px] font-bold border border-green-100">${p}</span>`).join('');
+          const addonTag = r.add_on ? `<div class="mt-1"><span class="text-[9px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">ADD-ON: ${r.add_on}</span></div>` : '';
+          
           const typeColor = r.payment_type === 'Cash' ? 'bg-orange-100 text-orange-700' : r.payment_type === 'HMO' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
 
           tbody.innerHTML += `<tr>
@@ -174,7 +201,7 @@
                 <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${typeColor}">${r.payment_type}</span>
               </div>
             </td>
-            <td class="px-6 py-4">${procs}</td>
+            <td class="px-6 py-4">${procs}${addonTag}</td>
             <td class="px-6 py-4">
               <div class="text-xs font-bold text-gray-700">Dr. ${r.doctor_name}</div>
               <div class="text-[10px] text-gray-400 font-medium mt-0.5 italic">G: ${r.guarantor || 'None'}</div>
@@ -185,26 +212,14 @@
       }
 
       window.switchView = (viewName) => {
-        // Redirection logic for Home and Reports
-        if (viewName === 'home') {
-          window.location.href = "home.html";
-          return;
-        }
-        if (viewName === 'reports') {
-          window.location.href = "reports.html";
-          return;
-        }
-
-        // Internal switch for Records (if you add more internal views later)
+        if (viewName === 'home') { window.location.href = "home.html"; return; }
+        if (viewName === 'reports') { window.location.href = "reports.html"; return; }
         document.querySelectorAll('.view-section').forEach(v => v.classList.remove('view-active'));
         document.querySelectorAll('.nav-link').forEach(l => l.className = 'text-sm font-bold text-gray-500 hover:text-[#007941] nav-link');
-
         const targetView = document.getElementById(`view-${viewName}`);
         const targetNav = document.getElementById(`nav-${viewName}`);
-
         if (targetView) targetView.classList.add('view-active');
         if (targetNav) targetNav.className = 'text-sm font-bold text-[#007941] border-b-2 border-[#007941] pb-1 nav-link';
-
         if(viewName === 'records') fetchRecords();
       };
 
@@ -218,7 +233,7 @@
 
       window.addProcedureRow = () => {
         const div = document.createElement('div'); div.className = "flex gap-2";
-        div.innerHTML = `<input type="text" placeholder="Entry" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none"><button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-600 rounded-2xl font-bold">×</button>`;
+        div.innerHTML = `<input type="text" list="procedureOptions" placeholder="Entry" class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none"><button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-600 rounded-2xl font-bold">×</button>`;
         document.getElementById('procedureContainer').appendChild(div);
       };
 
@@ -237,6 +252,7 @@
           age: parseInt(document.getElementById('f-age').value),
           gender: document.getElementById('f-gender').value,
           procedures,
+          add_on: document.getElementById('f-addon').value || null, // NEW FIELD
           doctor_name: document.getElementById('f-doctor').value,
           payment_type: document.getElementById('f-payment').value,
           guarantor: document.getElementById('f-guarantor').value || 'N/A',
