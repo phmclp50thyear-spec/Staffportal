@@ -9,24 +9,34 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; min-height: 100vh; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; min-height: 100vh; overflow-x: hidden; }
+    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
     .glass-nav { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
     .nav-link { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.75rem; transition: 0.3s; letter-spacing: 0.1em; }
     .nav-link:hover, .nav-active { color: #10b981; }
     .metric-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.5rem; }
-    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.5rem; text-transform: uppercase; }
-    .month-btn.active { color: white; background: #10b981; }
+    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; }
+    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.5rem; text-transform: uppercase; margin-bottom: 2px; }
+    .month-btn.active { color: white; background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+    .growth-badge { padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
+    .growth-up { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .growth-down { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
     .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
-    .chart-container { position: relative; height: 220px; width: 100%; }
+    .chart-container { position: relative; flex-grow: 1; min-height: 200px; width: 100%; }
+    .doughnut-wrapper { position: relative; width: 100%; height: 200px; }
+    .doughnut-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #10b981; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 12px; transition: 0.5s; z-index: 1000; }
+    #toast.show { transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
+  <div id="toast">LINK COPIED TO CLIPBOARD</div>
+  <canvas id="bg-canvas"></canvas>
 
   <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg">⚡</div>
+        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg text-white font-bold">⚡</div>
         <h1 class="font-extrabold text-sm tracking-tighter uppercase text-white">Executive Dashboard</h1>
       </div>
       <div class="hidden md:flex items-center gap-10">
@@ -34,22 +44,25 @@
         <a href="dashboard.html" class="nav-link">RECORDS</a>
         <a href="reports.html" class="nav-link nav-active">REPORTS</a>
       </div>
-      <button onclick="logout()" class="text-[10px] font-extrabold text-red-400 uppercase border border-red-400/30 px-4 py-2 rounded-lg hover:bg-red-400 transition">Logout</button>
+      <div class="flex items-center gap-3">
+        <button onclick="copyShareLink()" class="bg-emerald-500 text-white text-[10px] font-bold px-4 py-2 rounded-lg">SHARE</button>
+        <button onclick="logout()" class="text-[10px] font-extrabold text-red-400 border border-red-400/30 px-4 py-2 rounded-lg">LOGOUT</button>
+      </div>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-24 text-emerald-400 animate-pulse text-xs">Architecting Data Visualization...</div>
+    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light animate-pulse text-xs uppercase">Architecting Data...</div>
 
     <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-2 space-y-6">
-             <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
+            <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
                 <p class="text-[9px] font-bold text-emerald-400 uppercase mb-2">Daily Filter</p>
                 <input type="date" id="dateSelector" onchange="handleDateChange(this.value)" class="bg-transparent border border-white/10 rounded-lg p-2 text-xs w-full text-white">
-             </div>
+            </div>
             <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[40vh] overflow-y-auto"></div>
             <div class="metric-card bg-emerald-900/40 border-emerald-500/30">
-                <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VIP Census</p>
+                <p class="text-[9px] font-bold text-emerald-400 uppercase mb-1">VIP Census</p>
                 <h2 id="vipCount" class="text-4xl font-extrabold">0</h2>
             </div>
         </div>
@@ -57,45 +70,60 @@
         <div class="lg:col-span-10 space-y-8">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Performance (YoY)</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Revenue Performance</p>
                     <div class="chart-container"><canvas id="revLineChart"></canvas></div>
                 </div>
                 <div class="flex flex-col gap-6">
                     <div class="metric-card flex-1">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase">Revenue</p>
+                        <div class="flex justify-between items-start mb-2"><p class="text-[10px] font-bold text-slate-500 uppercase">Revenue</p><div id="revGrowthBadge"></div></div>
                         <h2 id="valCurrentYear" class="text-3xl font-extrabold">₱0</h2>
-                        <p class="text-[10px] text-slate-400 mt-1">Current Selected Period</p>
+                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valPrevYearVal" class="font-bold">₱0</span> (YoY)</p>
                     </div>
                     <div class="metric-card flex-1">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase">Census</p>
+                        <div class="flex justify-between items-start mb-2"><p class="text-[10px] font-bold text-slate-500 uppercase">Census</p><div id="cenGrowthBadge"></div></div>
                         <h2 id="valCensusCurrent" class="text-3xl font-extrabold">0</h2>
-                        <p class="text-[10px] text-slate-400 mt-1">Current Selected Period</p>
+                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valCensusPrevVal" class="font-bold">0</span> (YoY)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 text-center">Payment Methods</p>
+                    <div class="doughnut-wrapper">
+                        <canvas id="paymentChart"></canvas>
+                        <div class="doughnut-center-text"><p id="totalPayCensus" class="text-xl font-extrabold text-slate-800">0</p></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">HMO Performance Ranking</p>
+                    <div class="overflow-y-auto max-h-[220px]">
+                        <table class="w-full text-[11px]"><tbody id="hmoTableBody"></tbody></table>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Age Bracket Breakdown</p>
+                <div class="white-card h-[350px]">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Procedures</p>
+                    <div id="procedureList" class="space-y-1 overflow-y-auto"></div>
+                </div>
+                <div class="white-card h-[350px]">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Add-Ons</p>
+                    <div id="addonList" class="space-y-1 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Age Bracket Breakdown</p>
                     <div class="chart-container"><canvas id="ageChart"></canvas></div>
                 </div>
                 <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Gender Split</p>
-                    <div class="chart-container"><canvas id="genderChart"></canvas></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Procedures</p>
-                    <div id="procedureList" class="space-y-1"></div>
-                </div>
-                <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">HMO Performance Ranking</p>
-                    <div class="overflow-y-auto max-h-[220px]">
-                        <table class="w-full text-left text-[11px]">
-                            <tbody id="hmoTableBody" class="text-slate-700"></tbody>
-                        </table>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 text-center">Gender Split</p>
+                    <div class="doughnut-wrapper">
+                        <canvas id="genderChart"></canvas>
+                        <div class="doughnut-center-text"><p id="totalGenderCensus" class="text-xl font-extrabold text-slate-800">0</p></div>
                     </div>
                 </div>
             </div>
@@ -106,18 +134,19 @@
   <script>
     const db = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co','sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
     let globalData = [], latestYear, prevYear, selectedMonthIndex = null, selectedDate = null;
-    const monthsShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const monthsFull = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
     async function init() {
         const { data } = await db.from('patient_records').select('*');
         globalData = data || [];
         const years = [...new Set(globalData.map(r => new Date(r.date).getFullYear()))].sort((a,b) => b-a);
-        latestYear = years[0] || new Date().getFullYear();
+        latestYear = years[0] || 2024;
         prevYear = latestYear - 1;
         renderMonthPicker(); 
         updateDashboard();
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('reportContent').classList.remove('hidden');
+        initBG();
     }
 
     function updateDashboard() {
@@ -129,77 +158,87 @@
         const cur = filter(latestYear);
         const pre = filter(prevYear);
 
-        // Stats
+        // Core KPI & Variance
         const revC = cur.reduce((a,r) => a + (parseFloat(r.amount)||0), 0);
+        const revP = pre.reduce((a,r) => a + (parseFloat(r.amount)||0), 0);
+        const cenC = cur.length;
+        const cenP = pre.length;
+
         document.getElementById('valCurrentYear').innerText = `₱${revC.toLocaleString()}`;
-        document.getElementById('valCensusCurrent').innerText = cur.length.toLocaleString();
+        document.getElementById('valPrevYearVal').innerText = `₱${revP.toLocaleString()}`;
+        document.getElementById('valCensusCurrent').innerText = cenC.toLocaleString();
+        document.getElementById('valCensusPrevVal').innerText = cenP.toLocaleString();
+        document.getElementById('totalPayCensus').innerText = cenC;
+        document.getElementById('totalGenderCensus').innerText = cenC;
         document.getElementById('vipCount').innerText = cur.filter(r => r.guarantor?.toLowerCase() === 'vip').length;
 
+        const calcG = (c, p, id) => {
+            const pct = p > 0 ? ((c - p) / p * 100).toFixed(1) : (c > 0 ? '100' : '0');
+            document.getElementById(id).innerHTML = `<span class="growth-badge ${pct >= 0 ? 'growth-up' : 'growth-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
+        };
+        calcG(revC, revP, 'revGrowthBadge'); calcG(cenC, cenP, 'cenGrowthBadge');
+
         renderCharts(cur, pre);
-        renderHmoTable(cur);
-        renderProcedures(cur);
+        renderTopLists(cur);
+    }
+
+    function renderTopLists(data) {
+        const getTop = (key) => {
+            const counts = {};
+            data.forEach(r => { const items = Array.isArray(r[key]) ? r[key] : [r[key]]; items.forEach(i => { if(i) counts[i] = (counts[i]||0)+1; })});
+            return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        };
+
+        document.getElementById('procedureList').innerHTML = getTop('procedures').map(([n,c])=>`<div class="procedure-item"><span class="font-bold text-slate-700">${n}</span><span class="text-emerald-500 font-bold">${c}</span></div>`).join('');
+        document.getElementById('addonList').innerHTML = getTop('add_on').map(([n,c])=>`<div class="procedure-item"><span class="font-bold text-slate-700">${n}</span><span class="text-blue-500 font-bold">${c}</span></div>`).join('');
+        
+        // HMO Table
+        const hmo = {}; data.filter(r=>r.payment_type==='HMO').forEach(r => { const n = r.guarantor||'Other'; if(!hmo[n]) hmo[n]={c:0,v:0}; hmo[n].c++; hmo[n].v+=(parseFloat(r.amount)||0); });
+        document.getElementById('hmoTableBody').innerHTML = Object.entries(hmo).sort((a,b)=>b[1].v-a[1].v).map(([n,s])=>`<tr class="border-b"><td class="py-3 font-bold">${n}</td><td class="text-center text-blue-500 font-bold">${s.c}</td><td class="text-right text-emerald-600 font-bold">₱${s.v.toLocaleString()}</td></tr>`).join('');
     }
 
     function renderCharts(cur, pre) {
         Chart.helpers.each(Chart.instances, (i) => i.destroy());
-        const commonOpt = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } };
+        const opt = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
 
-        // 1. Line Chart with Comparison Logic
-        let labels = monthsShort, curTrend, preTrend;
-        if(selectedMonthIndex === null) {
-            curTrend = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === latestYear && new Date(r.date).getMonth() === i).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
-            preTrend = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === prevYear && new Date(r.date).getMonth() === i).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
-        } else {
-            const days = new Date(latestYear, selectedMonthIndex + 1, 0).getDate();
-            labels = Array.from({length: days}, (_, i) => i+1);
-            curTrend = labels.map(d => globalData.filter(r => { const dt=new Date(r.date); return dt.getFullYear()===latestYear && dt.getMonth()===selectedMonthIndex && dt.getDate()===d }).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
-            preTrend = labels.map(d => globalData.filter(r => { const dt=new Date(r.date); return dt.getFullYear()===prevYear && dt.getMonth()===selectedMonthIndex && dt.getDate()===d }).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
-        }
+        // Line Chart
+        const labels = selectedMonthIndex === null ? ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] : Array.from({length: new Date(latestYear, selectedMonthIndex + 1, 0).getDate()}, (_, i) => i+1);
+        const getTrend = (yr) => labels.map((_, i) => globalData.filter(r => { const d = new Date(r.date); return d.getFullYear()===yr && (selectedMonthIndex===null ? d.getMonth()===i : (d.getMonth()===selectedMonthIndex && d.getDate()===(i+1))) }).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
 
-        new Chart(document.getElementById('revLineChart'), {
-            type: 'line',
-            data: { labels, datasets: [
-                { label: `Current (${latestYear})`, data: curTrend, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 },
-                { label: `Previous (${prevYear})`, data: preTrend, borderColor: '#94a3b8', borderDash: [5,5], tension: 0.4 }
-            ]},
-            options: commonOpt
-        });
+        new Chart(document.getElementById('revLineChart'), { type: 'line', data: { labels, datasets: [{ label: latestYear, data: getTrend(latestYear), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }, { label: prevYear, data: getTrend(prevYear), borderColor: '#94a3b8', borderDash: [5,5], tension: 0.4 }] }, options: opt });
+        
+        // Age Bar
+        new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: ['0-18','19-35','36-50','51-65','66+'], datasets: [{ data: [cur.filter(r=>r.age<=18).length, cur.filter(r=>r.age>18&&r.age<=35).length, cur.filter(r=>r.age>35&&r.age<=50).length, cur.filter(r=>r.age>50&&r.age<=65).length, cur.filter(r=>r.age>65).length], backgroundColor: '#3b82f6', borderRadius: 8 }] }, options: { ...opt, indexAxis: 'y' } });
 
-        // 2. Age Chart
-        new Chart(document.getElementById('ageChart'), {
-            type: 'bar',
-            data: { labels: ['0-18','19-35','36-50','51+'], datasets: [{ label: 'Patients', data: [cur.filter(r=>r.age<=18).length, cur.filter(r=>r.age>18&&r.age<=35).length, cur.filter(r=>r.age>35&&r.age<=50).length, cur.filter(r=>r.age>50).length], backgroundColor: '#3b82f6' }] },
-            options: commonOpt
-        });
-
-        // 3. Gender Chart
-        new Chart(document.getElementById('genderChart'), {
-            type: 'doughnut',
-            data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'] }] },
-            options: commonOpt
-        });
-    }
-
-    function renderHmoTable(data) {
-        const hmo = {}; data.filter(r => r.payment_type === 'HMO').forEach(r => { const n = r.guarantor || 'Unspecified'; hmo[n] = (hmo[n]||0) + (parseFloat(r.amount)||0); });
-        document.getElementById('hmoTableBody').innerHTML = Object.entries(hmo).sort((a,b)=>b[1]-a[1]).map(([n,v]) => `<tr class="border-b"> <td class="py-2 font-bold">${n}</td> <td class="text-right text-emerald-600 font-bold">₱${v.toLocaleString()}</td> </tr>`).join('');
-    }
-
-    function renderProcedures(data) {
-        const counts = {}; data.forEach(r => (r.procedures||[]).forEach(p => counts[p] = (counts[p]||0)+1));
-        document.getElementById('procedureList').innerHTML = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,c]) => `<div class="procedure-item"><span>${n}</span><span class="text-emerald-500 font-bold">${c}</span></div>`).join('');
+        // Doughnuts
+        const payData = [cur.filter(r=>r.payment_type==='Cash').length, cur.filter(r=>r.payment_type==='HMO').length, cur.filter(r=>r.payment_type==='Company').length];
+        new Chart(document.getElementById('paymentChart'), { type: 'doughnut', data: { labels: ['Cash','HMO','Company'], datasets: [{ data: payData, backgroundColor: ['#10b981','#3b82f6','#f59e0b'] }] }, options: { ...opt, cutout: '75%' } });
+        new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'] }] }, options: { ...opt, cutout: '75%' } });
     }
 
     function renderMonthPicker() {
-        const p = document.getElementById('monthPicker'); p.innerHTML = `<button onclick="setF(null)" class="month-btn ${selectedMonthIndex===null?'active':''}">OVERALL VIEW</button>`;
-        ["January","February","March","April","May","June","July","August","September","October","November","December"].forEach((m,i) => {
-            p.innerHTML += `<button onclick="setF(${i})" class="month-btn ${selectedMonthIndex===i?'active':''}">${m}</button>`;
-        });
+        const p = document.getElementById('monthPicker'); 
+        p.innerHTML = `<button onclick="setF(null)" class="month-btn ${selectedMonthIndex===null?'active':''}">Overall View</button>`;
+        monthsFull.forEach((m, i) => p.innerHTML += `<button onclick="setF(${i})" class="month-btn ${selectedMonthIndex===i?'active':''}">${m}</button>`);
     }
 
     window.setF = (i) => { selectedMonthIndex = i; selectedDate = null; updateDashboard(); renderMonthPicker(); };
     window.handleDateChange = (v) => { selectedDate = v; selectedMonthIndex = null; updateDashboard(); renderMonthPicker(); };
+    window.copyShareLink = () => { navigator.clipboard.writeText(window.location.href); const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); };
     window.logout = () => window.location.href = "index.html";
+    
+    // Background Animation
+    function initBG() {
+        const canvas = document.getElementById('bg-canvas'); const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let molecules = Array.from({length: 20}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-.5)*.2, vy: (Math.random()-.5)*.2 }));
+        function animate() {
+            ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = 'rgba(255,255,255,0.05)';
+            molecules.forEach(m => { m.x+=m.vx; m.y+=m.vy; if(m.x<0||m.x>canvas.width) m.vx*=-1; if(m.y<0||m.y>canvas.height) m.vy*=-1; ctx.beginPath(); ctx.arc(m.x, m.y, 2, 0, Math.PI*2); ctx.fill(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
     init();
   </script>
 </body>
