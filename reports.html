@@ -9,33 +9,24 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; min-height: 100vh; overflow-x: hidden; }
-    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; min-height: 100vh; }
     .glass-nav { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
     .nav-link { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.75rem; transition: 0.3s; letter-spacing: 0.1em; }
     .nav-link:hover, .nav-active { color: #10b981; }
     .metric-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 1.5rem; padding: 1.5rem; }
-    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; }
-    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.5rem; text-transform: uppercase; margin-bottom: 2px; }
-    .month-btn.active { color: white; background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-    .growth-badge { padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
-    .growth-up { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-    .growth-down { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .white-card { background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 1.5rem; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+    .month-btn { width: 100%; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; transition: 0.3s; color: rgba(255,255,255,0.3); border-radius: 0.5rem; text-transform: uppercase; }
+    .month-btn.active { color: white; background: #10b981; }
     .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
-    .chart-container { position: relative; flex-grow: 1; min-height: 200px; width: 100%; }
-    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #10b981; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 12px; transition: 0.5s; z-index: 1000; }
-    #toast.show { transform: translateX(-50%) translateY(0); }
+    .chart-container { position: relative; height: 220px; width: 100%; }
   </style>
 </head>
 <body>
 
-  <div id="toast">LINK COPIED TO CLIPBOARD</div>
-  <canvas id="bg-canvas"></canvas>
-
   <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg"><svg class="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5"/></svg></div>
+        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg">⚡</div>
         <h1 class="font-extrabold text-sm tracking-tighter uppercase text-white">Executive Dashboard</h1>
       </div>
       <div class="hidden md:flex items-center gap-10">
@@ -43,63 +34,67 @@
         <a href="dashboard.html" class="nav-link">RECORDS</a>
         <a href="reports.html" class="nav-link nav-active">REPORTS</a>
       </div>
-      <div class="flex items-center gap-4">
-        <button onclick="logout()" class="text-[10px] font-extrabold text-red-400 uppercase border border-red-400/30 px-4 py-2 rounded-lg hover:bg-red-400 hover:text-white transition">Logout</button>
-      </div>
+      <button onclick="logout()" class="text-[10px] font-extrabold text-red-400 uppercase border border-red-400/30 px-4 py-2 rounded-lg hover:bg-red-400 transition">Logout</button>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light animate-pulse uppercase text-xs">Architecting Data...</div>
+    <div id="loadingState" class="text-center py-24 text-emerald-400 animate-pulse text-xs">Architecting Data Visualization...</div>
 
     <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-2 space-y-6">
              <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-                <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-2 text-center">Daily Filter</p>
-                <input type="date" id="dateSelector" onchange="handleDateChange(this.value)" class="bg-transparent border border-white/10 rounded-lg p-2 text-xs w-full text-white focus:outline-none focus:border-emerald-500">
+                <p class="text-[9px] font-bold text-emerald-400 uppercase mb-2">Daily Filter</p>
+                <input type="date" id="dateSelector" onchange="handleDateChange(this.value)" class="bg-transparent border border-white/10 rounded-lg p-2 text-xs w-full text-white">
              </div>
-            <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
-            <div class="metric-card bg-emerald-900/40 border-emerald-500/30 text-center">
+            <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[40vh] overflow-y-auto"></div>
+            <div class="metric-card bg-emerald-900/40 border-emerald-500/30">
                 <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VIP Census</p>
                 <h2 id="vipCount" class="text-4xl font-extrabold">0</h2>
             </div>
         </div>
 
         <div class="lg:col-span-10 space-y-8">
-            <div class="flex items-center gap-3">
-                <div id="filterSummary" class="bg-emerald-500/20 border border-emerald-500/30 px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] text-emerald-400 uppercase">Overall Performance</div>
-                <div class="h-[1px] flex-grow bg-white/10"></div>
-            </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Performance (Current vs Prev Year)</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Performance (YoY)</p>
                     <div class="chart-container"><canvas id="revLineChart"></canvas></div>
                 </div>
                 <div class="flex flex-col gap-6">
                     <div class="metric-card flex-1">
-                        <div class="flex justify-between items-start mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Revenue</p><div id="revGrowthBadge"></div></div>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase">Revenue</p>
                         <h2 id="valCurrentYear" class="text-3xl font-extrabold">₱0</h2>
-                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valPrevYearVal" class="font-bold">₱0</span> (YoY)</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Current Selected Period</p>
                     </div>
                     <div class="metric-card flex-1">
-                        <div class="flex justify-between items-start mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Census</p><div id="cenGrowthBadge"></div></div>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase">Census</p>
                         <h2 id="valCensusCurrent" class="text-3xl font-extrabold">0</h2>
-                        <p class="text-[10px] text-slate-500 mt-1">vs <span id="valCensusPrevVal" class="font-bold">0</span> (YoY)</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Current Selected Period</p>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider border-b pb-2">Top 10 Procedures</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Age Bracket Breakdown</p>
+                    <div class="chart-container"><canvas id="ageChart"></canvas></div>
+                </div>
+                <div class="white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Gender Split</p>
+                    <div class="chart-container"><canvas id="genderChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Procedures</p>
                     <div id="procedureList" class="space-y-1"></div>
                 </div>
                 <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider border-b pb-2">HMO Performance</p>
-                    <div class="overflow-y-auto max-h-[250px]">
-                        <table class="w-full text-[11px]">
-                            <tbody id="hmoTableBody"></tbody>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">HMO Performance Ranking</p>
+                    <div class="overflow-y-auto max-h-[220px]">
+                        <table class="w-full text-left text-[11px]">
+                            <tbody id="hmoTableBody" class="text-slate-700"></tbody>
                         </table>
                     </div>
                 </div>
@@ -112,7 +107,6 @@
     const db = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co','sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
     let globalData = [], latestYear, prevYear, selectedMonthIndex = null, selectedDate = null;
     const monthsShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const monthsFull = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
     async function init() {
         const { data } = await db.from('patient_records').select('*');
@@ -120,7 +114,6 @@
         const years = [...new Set(globalData.map(r => new Date(r.date).getFullYear()))].sort((a,b) => b-a);
         latestYear = years[0] || new Date().getFullYear();
         prevYear = latestYear - 1;
-
         renderMonthPicker(); 
         updateDashboard();
         document.getElementById('loadingState').classList.add('hidden');
@@ -128,98 +121,85 @@
     }
 
     function updateDashboard() {
-        const filterByYear = (yr) => globalData.filter(r => {
+        const filter = (yr) => globalData.filter(r => {
             const d = new Date(r.date);
-            const matchesYear = d.getFullYear() === yr;
-            const matchesMonth = selectedMonthIndex === null || d.getMonth() === selectedMonthIndex;
-            const matchesDay = !selectedDate || d.toISOString().split('T')[0] === selectedDate;
-            return matchesYear && matchesMonth && matchesDay;
+            return d.getFullYear() === yr && (selectedMonthIndex === null || d.getMonth() === selectedMonthIndex) && (!selectedDate || d.toISOString().split('T')[0] === selectedDate);
         });
 
-        const curData = filterByYear(latestYear);
-        const preData = filterByYear(prevYear);
+        const cur = filter(latestYear);
+        const pre = filter(prevYear);
 
-        const revC = curData.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
-        const revP = preData.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
-        
+        // Stats
+        const revC = cur.reduce((a,r) => a + (parseFloat(r.amount)||0), 0);
         document.getElementById('valCurrentYear').innerText = `₱${revC.toLocaleString()}`;
-        document.getElementById('valPrevYearVal').innerText = `₱${revP.toLocaleString()}`;
-        document.getElementById('valCensusCurrent').innerText = curData.length.toLocaleString();
-        document.getElementById('valCensusPrevVal').innerText = preData.length.toLocaleString();
-        document.getElementById('vipCount').innerText = curData.filter(r => r.guarantor?.toLowerCase() === 'vip').length;
+        document.getElementById('valCensusCurrent').innerText = cur.length.toLocaleString();
+        document.getElementById('vipCount').innerText = cur.filter(r => r.guarantor?.toLowerCase() === 'vip').length;
 
-        renderHmoTable(curData);
-        renderTopLists(curData);
-        renderMainChart(selectedMonthIndex);
+        renderCharts(cur, pre);
+        renderHmoTable(cur);
+        renderProcedures(cur);
     }
 
-    function renderMainChart(mIndex) {
+    function renderCharts(cur, pre) {
         Chart.helpers.each(Chart.instances, (i) => i.destroy());
-        const ctx = document.getElementById('revLineChart');
-        
-        let labels = monthsShort;
-        let curTrend, preTrend;
+        const commonOpt = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } };
 
-        if(mIndex === null) {
-            labels = monthsShort;
-            curTrend = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === latestYear && new Date(r.date).getMonth() === i).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
-            preTrend = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === prevYear && new Date(r.date).getMonth() === i).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
+        // 1. Line Chart with Comparison Logic
+        let labels = monthsShort, curTrend, preTrend;
+        if(selectedMonthIndex === null) {
+            curTrend = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === latestYear && new Date(r.date).getMonth() === i).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
+            preTrend = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === prevYear && new Date(r.date).getMonth() === i).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
         } else {
-            const days = new Date(latestYear, mIndex + 1, 0).getDate();
+            const days = new Date(latestYear, selectedMonthIndex + 1, 0).getDate();
             labels = Array.from({length: days}, (_, i) => i+1);
-            curTrend = labels.map(d => globalData.filter(r => { const dt = new Date(r.date); return dt.getFullYear() === latestYear && dt.getMonth() === mIndex && dt.getDate() === d }).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
-            preTrend = labels.map(d => globalData.filter(r => { const dt = new Date(r.date); return dt.getFullYear() === prevYear && dt.getMonth() === mIndex && dt.getDate() === d }).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
+            curTrend = labels.map(d => globalData.filter(r => { const dt=new Date(r.date); return dt.getFullYear()===latestYear && dt.getMonth()===selectedMonthIndex && dt.getDate()===d }).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
+            preTrend = labels.map(d => globalData.filter(r => { const dt=new Date(r.date); return dt.getFullYear()===prevYear && dt.getMonth()===selectedMonthIndex && dt.getDate()===d }).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
         }
 
-        new Chart(ctx, {
+        new Chart(document.getElementById('revLineChart'), {
             type: 'line',
-            data: {
-                labels,
-                datasets: [
-                    { label: `${latestYear}`, data: curTrend, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3 },
-                    { label: `${prevYear}`, data: preTrend, borderColor: '#94a3b8', borderDash: [5, 5], fill: false, tension: 0.4, borderWidth: 2 }
-                ]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } },
-                scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }
-            }
+            data: { labels, datasets: [
+                { label: `Current (${latestYear})`, data: curTrend, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 },
+                { label: `Previous (${prevYear})`, data: preTrend, borderColor: '#94a3b8', borderDash: [5,5], tension: 0.4 }
+            ]},
+            options: commonOpt
+        });
+
+        // 2. Age Chart
+        new Chart(document.getElementById('ageChart'), {
+            type: 'bar',
+            data: { labels: ['0-18','19-35','36-50','51+'], datasets: [{ label: 'Patients', data: [cur.filter(r=>r.age<=18).length, cur.filter(r=>r.age>18&&r.age<=35).length, cur.filter(r=>r.age>35&&r.age<=50).length, cur.filter(r=>r.age>50).length], backgroundColor: '#3b82f6' }] },
+            options: commonOpt
+        });
+
+        // 3. Gender Chart
+        new Chart(document.getElementById('genderChart'), {
+            type: 'doughnut',
+            data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'] }] },
+            options: commonOpt
         });
     }
 
     function renderHmoTable(data) {
-        const hmo = {};
-        data.filter(r => r.payment_type === 'HMO').forEach(r => {
-            const n = r.guarantor || 'Other';
-            if(!hmo[n]) hmo[n] = { c: 0, v: 0 };
-            hmo[n].c++; hmo[n].v += (parseFloat(r.amount) || 0);
-        });
-        document.getElementById('hmoTableBody').innerHTML = Object.entries(hmo).sort((a,b) => b[1].v - a[1].v).map(([n,s]) => `
-            <tr class="border-b border-slate-50"><td class="py-2 font-bold">${n}</td><td class="text-right font-black text-emerald-600">₱${s.v.toLocaleString()}</td></tr>
-        `).join('');
+        const hmo = {}; data.filter(r => r.payment_type === 'HMO').forEach(r => { const n = r.guarantor || 'Unspecified'; hmo[n] = (hmo[n]||0) + (parseFloat(r.amount)||0); });
+        document.getElementById('hmoTableBody').innerHTML = Object.entries(hmo).sort((a,b)=>b[1]-a[1]).map(([n,v]) => `<tr class="border-b"> <td class="py-2 font-bold">${n}</td> <td class="text-right text-emerald-600 font-bold">₱${v.toLocaleString()}</td> </tr>`).join('');
     }
 
-    function renderTopLists(data) {
-        const counts = {};
-        data.forEach(r => (r.procedures || []).forEach(p => counts[p] = (counts[p] || 0) + 1));
-        document.getElementById('procedureList').innerHTML = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,10).map(([n,c]) => `
-            <div class="procedure-item"><span class="font-bold text-slate-700">${n}</span><span class="text-emerald-500 font-black">${c}</span></div>
-        `).join('');
+    function renderProcedures(data) {
+        const counts = {}; data.forEach(r => (r.procedures||[]).forEach(p => counts[p] = (counts[p]||0)+1));
+        document.getElementById('procedureList').innerHTML = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,c]) => `<div class="procedure-item"><span>${n}</span><span class="text-emerald-500 font-bold">${c}</span></div>`).join('');
     }
 
     function renderMonthPicker() {
-        const p = document.getElementById('monthPicker'); p.innerHTML = `<button onclick="setFilter(null)" class="month-btn ${selectedMonthIndex===null?'active':''}">OVERALL VIEW</button>`;
-        monthsFull.forEach((m, i) => {
-            p.innerHTML += `<button onclick="setFilter(${i})" class="month-btn ${selectedMonthIndex===i?'active':''}">${m}</button>`;
+        const p = document.getElementById('monthPicker'); p.innerHTML = `<button onclick="setF(null)" class="month-btn ${selectedMonthIndex===null?'active':''}">OVERALL VIEW</button>`;
+        ["January","February","March","April","May","June","July","August","September","October","November","December"].forEach((m,i) => {
+            p.innerHTML += `<button onclick="setF(${i})" class="month-btn ${selectedMonthIndex===i?'active':''}">${m}</button>`;
         });
     }
 
-    window.setFilter = (i) => { selectedMonthIndex = i; selectedDate = null; updateDashboard(); renderMonthPicker(); };
+    window.setF = (i) => { selectedMonthIndex = i; selectedDate = null; updateDashboard(); renderMonthPicker(); };
     window.handleDateChange = (v) => { selectedDate = v; selectedMonthIndex = null; updateDashboard(); renderMonthPicker(); };
     window.logout = () => window.location.href = "index.html";
-
     init();
   </script>
 </body>
