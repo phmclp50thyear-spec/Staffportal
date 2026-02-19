@@ -24,7 +24,7 @@
     .procedure-item { border-bottom: 1px solid rgba(0,0,0,0.03); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
     .chart-container { position: relative; flex-grow: 1; min-height: 200px; width: 100%; }
     .doughnut-wrapper { position: relative; width: 100%; height: 200px; }
-    .doughnut-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+    .doughnut-center-text { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #10b981; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 12px; transition: 0.5s; z-index: 1000; }
     #toast.show { transform: translateX(-50%) translateY(0); }
   </style>
@@ -36,7 +36,7 @@
   <nav class="glass-nav sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg text-white font-bold">⚡</div>
+        <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg text-white">⚡</div>
         <h1 class="font-extrabold text-sm tracking-tighter uppercase text-white">Executive Dashboard</h1>
       </div>
       <div class="hidden md:flex items-center gap-10">
@@ -46,19 +46,19 @@
       </div>
       <div class="flex items-center gap-3">
         <button onclick="copyShareLink()" class="bg-emerald-500 text-white text-[10px] font-bold px-4 py-2 rounded-lg">SHARE</button>
-        <button onclick="logout()" class="text-[10px] font-extrabold text-red-400 border border-red-400/30 px-4 py-2 rounded-lg">LOGOUT</button>
+        <button onclick="logout()" class="text-[10px] font-extrabold text-red-400 border border-red-400/30 px-4 py-2 rounded-lg hover:bg-red-400 hover:text-white transition">Logout</button>
       </div>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto p-6 lg:p-8">
-    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light animate-pulse text-xs uppercase">Architecting Data...</div>
+    <div id="loadingState" class="text-center py-24 text-emerald-400 font-light animate-pulse text-xs uppercase">Architecting Data Visualization...</div>
 
     <div id="reportContent" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
                 <p class="text-[9px] font-bold text-emerald-400 uppercase mb-2">Daily Filter</p>
-                <input type="date" id="dateSelector" onchange="handleDateChange(this.value)" class="bg-transparent border border-white/10 rounded-lg p-2 text-xs w-full text-white">
+                <input type="date" id="dateSelector" onchange="handleDateChange(this.value)" class="bg-transparent border border-white/10 rounded-lg p-2 text-xs w-full text-white outline-none">
             </div>
             <div id="monthPicker" class="space-y-1 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[40vh] overflow-y-auto"></div>
             <div class="metric-card bg-emerald-900/40 border-emerald-500/30">
@@ -70,7 +70,7 @@
         <div class="lg:col-span-10 space-y-8">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Revenue Performance</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Performance (YoY)</p>
                     <div class="chart-container"><canvas id="revLineChart"></canvas></div>
                 </div>
                 <div class="flex flex-col gap-6">
@@ -87,45 +87,42 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 text-center">Payment Methods</p>
-                    <div class="doughnut-wrapper">
-                        <canvas id="paymentChart"></canvas>
-                        <div class="doughnut-center-text"><p id="totalPayCensus" class="text-xl font-extrabold text-slate-800">0</p></div>
-                    </div>
-                </div>
-                <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">HMO Performance Ranking</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <div class="lg:col-span-2 white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider border-b pb-2">HMO Performance Ranking</p>
                     <div class="overflow-y-auto max-h-[220px]">
-                        <table class="w-full text-[11px]"><tbody id="hmoTableBody"></tbody></table>
+                        <table class="w-full text-left text-[11px]">
+                            <thead><tr class="text-slate-400 uppercase border-b"><th class="py-2">HMO Name</th><th class="text-center">Census</th><th class="text-right">Revenue</th></tr></thead>
+                            <tbody id="hmoTableBody" class="text-slate-700"></tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="white-card h-[350px]">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Procedures</p>
-                    <div id="procedureList" class="space-y-1 overflow-y-auto"></div>
-                </div>
-                <div class="white-card h-[350px]">
+                <div class="white-card">
                     <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Add-Ons</p>
-                    <div id="addonList" class="space-y-1 overflow-y-auto"></div>
+                    <div id="addonList" class="space-y-1 overflow-y-auto max-h-[220px]"></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4">Age Bracket Breakdown</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <div class="lg:col-span-2 white-card">
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Age Bracket Breakdown</p>
                     <div class="chart-container"><canvas id="ageChart"></canvas></div>
                 </div>
                 <div class="white-card">
                     <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 text-center">Gender Split</p>
                     <div class="doughnut-wrapper">
                         <canvas id="genderChart"></canvas>
-                        <div class="doughnut-center-text"><p id="totalGenderCensus" class="text-xl font-extrabold text-slate-800">0</p></div>
+                        <div class="doughnut-center-text">
+                            <p id="totalGenderCensus" class="text-2xl font-extrabold text-slate-800">0</p>
+                            <p class="text-[9px] text-slate-400 uppercase font-bold">Total</p>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="white-card">
+                <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 border-b pb-2">Top 10 Procedures</p>
+                <div id="procedureList" class="grid grid-cols-1 md:grid-cols-2 gap-x-8"></div>
             </div>
         </div>
     </div>
@@ -158,7 +155,6 @@
         const cur = filter(latestYear);
         const pre = filter(prevYear);
 
-        // Core KPI & Variance
         const revC = cur.reduce((a,r) => a + (parseFloat(r.amount)||0), 0);
         const revP = pre.reduce((a,r) => a + (parseFloat(r.amount)||0), 0);
         const cenC = cur.length;
@@ -168,7 +164,6 @@
         document.getElementById('valPrevYearVal').innerText = `₱${revP.toLocaleString()}`;
         document.getElementById('valCensusCurrent').innerText = cenC.toLocaleString();
         document.getElementById('valCensusPrevVal').innerText = cenP.toLocaleString();
-        document.getElementById('totalPayCensus').innerText = cenC;
         document.getElementById('totalGenderCensus').innerText = cenC;
         document.getElementById('vipCount').innerText = cur.filter(r => r.guarantor?.toLowerCase() === 'vip').length;
 
@@ -179,41 +174,53 @@
         calcG(revC, revP, 'revGrowthBadge'); calcG(cenC, cenP, 'cenGrowthBadge');
 
         renderCharts(cur, pre);
-        renderTopLists(cur);
-    }
-
-    function renderTopLists(data) {
-        const getTop = (key) => {
-            const counts = {};
-            data.forEach(r => { const items = Array.isArray(r[key]) ? r[key] : [r[key]]; items.forEach(i => { if(i) counts[i] = (counts[i]||0)+1; })});
-            return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-        };
-
-        document.getElementById('procedureList').innerHTML = getTop('procedures').map(([n,c])=>`<div class="procedure-item"><span class="font-bold text-slate-700">${n}</span><span class="text-emerald-500 font-bold">${c}</span></div>`).join('');
-        document.getElementById('addonList').innerHTML = getTop('add_on').map(([n,c])=>`<div class="procedure-item"><span class="font-bold text-slate-700">${n}</span><span class="text-blue-500 font-bold">${c}</span></div>`).join('');
-        
-        // HMO Table
-        const hmo = {}; data.filter(r=>r.payment_type==='HMO').forEach(r => { const n = r.guarantor||'Other'; if(!hmo[n]) hmo[n]={c:0,v:0}; hmo[n].c++; hmo[n].v+=(parseFloat(r.amount)||0); });
-        document.getElementById('hmoTableBody').innerHTML = Object.entries(hmo).sort((a,b)=>b[1].v-a[1].v).map(([n,s])=>`<tr class="border-b"><td class="py-3 font-bold">${n}</td><td class="text-center text-blue-500 font-bold">${s.c}</td><td class="text-right text-emerald-600 font-bold">₱${s.v.toLocaleString()}</td></tr>`).join('');
+        renderLists(cur);
     }
 
     function renderCharts(cur, pre) {
         Chart.helpers.each(Chart.instances, (i) => i.destroy());
         const opt = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
 
-        // Line Chart
+        // Line Chart Logic
         const labels = selectedMonthIndex === null ? ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] : Array.from({length: new Date(latestYear, selectedMonthIndex + 1, 0).getDate()}, (_, i) => i+1);
-        const getTrend = (yr) => labels.map((_, i) => globalData.filter(r => { const d = new Date(r.date); return d.getFullYear()===yr && (selectedMonthIndex===null ? d.getMonth()===i : (d.getMonth()===selectedMonthIndex && d.getDate()===(i+1))) }).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
+        const getTrend = (yr) => labels.map((_, i) => globalData.filter(r => { 
+            const d = new Date(r.date); 
+            return d.getFullYear()===yr && (selectedMonthIndex===null ? d.getMonth()===i : (d.getMonth()===selectedMonthIndex && d.getDate()===(i+1))) 
+        }).reduce((a,r)=>a+(parseFloat(r.amount)||0),0));
 
-        new Chart(document.getElementById('revLineChart'), { type: 'line', data: { labels, datasets: [{ label: latestYear, data: getTrend(latestYear), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }, { label: prevYear, data: getTrend(prevYear), borderColor: '#94a3b8', borderDash: [5,5], tension: 0.4 }] }, options: opt });
-        
-        // Age Bar
-        new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: ['0-18','19-35','36-50','51-65','66+'], datasets: [{ data: [cur.filter(r=>r.age<=18).length, cur.filter(r=>r.age>18&&r.age<=35).length, cur.filter(r=>r.age>35&&r.age<=50).length, cur.filter(r=>r.age>50&&r.age<=65).length, cur.filter(r=>r.age>65).length], backgroundColor: '#3b82f6', borderRadius: 8 }] }, options: { ...opt, indexAxis: 'y' } });
+        new Chart(document.getElementById('revLineChart'), { 
+            type: 'line', 
+            data: { labels, datasets: [
+                { label: latestYear, data: getTrend(latestYear), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },
+                { label: prevYear, data: getTrend(prevYear), borderColor: '#94a3b8', borderDash: [5,5], tension: 0.4 }
+            ]}, options: opt 
+        });
 
-        // Doughnuts
-        const payData = [cur.filter(r=>r.payment_type==='Cash').length, cur.filter(r=>r.payment_type==='HMO').length, cur.filter(r=>r.payment_type==='Company').length];
-        new Chart(document.getElementById('paymentChart'), { type: 'doughnut', data: { labels: ['Cash','HMO','Company'], datasets: [{ data: payData, backgroundColor: ['#10b981','#3b82f6','#f59e0b'] }] }, options: { ...opt, cutout: '75%' } });
+        // Age Chart (Fixed Logic)
+        const ageLabels = ['0-18','19-35','36-50','51-65','66+'];
+        const ageData = [
+            cur.filter(r => r.age <= 18).length,
+            cur.filter(r => r.age > 18 && r.age <= 35).length,
+            cur.filter(r => r.age > 35 && r.age <= 50).length,
+            cur.filter(r => r.age > 50 && r.age <= 65).length,
+            cur.filter(r => r.age > 65).length
+        ];
+        new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: ageLabels, datasets: [{ data: ageData, backgroundColor: '#3b82f6', borderRadius: 4 }] }, options: { ...opt, indexAxis: 'y' } });
+
+        // Gender Chart
         new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'] }] }, options: { ...opt, cutout: '75%' } });
+    }
+
+    function renderLists(data) {
+        const count = (key) => {
+            const m = {}; data.forEach(r => { (Array.isArray(r[key]) ? r[key] : [r[key]]).forEach(v => { if(v) m[v] = (m[v]||0)+1; })});
+            return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        };
+        document.getElementById('procedureList').innerHTML = count('procedures').map(([n,c])=>`<div class="procedure-item"><span class="font-bold text-slate-700">${n}</span><span class="text-emerald-500 font-bold">${c}</span></div>`).join('');
+        document.getElementById('addonList').innerHTML = count('add_on').map(([n,c])=>`<div class="procedure-item"><span class="font-bold text-slate-700">${n}</span><span class="text-blue-500 font-bold">${c}</span></div>`).join('');
+        
+        const hmo = {}; data.filter(r=>r.payment_type==='HMO').forEach(r => { const n = r.guarantor||'Unspecified'; if(!hmo[n]) hmo[n]={c:0,v:0}; hmo[n].c++; hmo[n].v+=(parseFloat(r.amount)||0); });
+        document.getElementById('hmoTableBody').innerHTML = Object.entries(hmo).sort((a,b)=>b[1].v-a[1].v).map(([n,s])=>`<tr class="border-b"><td class="py-2 font-bold">${n}</td><td class="text-center text-blue-500 font-bold">${s.c}</td><td class="text-right text-emerald-600 font-bold">₱${s.v.toLocaleString()}</td></tr>`).join('');
     }
 
     function renderMonthPicker() {
@@ -227,7 +234,6 @@
     window.copyShareLink = () => { navigator.clipboard.writeText(window.location.href); const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); };
     window.logout = () => window.location.href = "index.html";
     
-    // Background Animation
     function initBG() {
         const canvas = document.getElementById('bg-canvas'); const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
