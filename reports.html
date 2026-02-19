@@ -78,7 +78,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 white-card">
-                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Performance</p>
+                    <p class="text-[11px] font-extrabold text-slate-400 uppercase mb-4 tracking-wider">Revenue Performance (YoY Comparison)</p>
                     <div class="chart-container"><canvas id="revLineChart"></canvas></div>
                 </div>
                 <div class="flex flex-col gap-6">
@@ -273,16 +273,66 @@
             options: { ...opt, cutout: '70%', plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } } } }
         });
 
-        // Other Charts
+        // REVENUE PERFORMANCE LINE GRAPH (Corrected for YoY)
         let labels = monthsShort;
-        let trend = monthsShort.map((_, i) => globalData.filter(r => new Date(r.date).getFullYear() === latestYear && new Date(r.date).getMonth() === i).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
+        // Current Year Data
+        let trendCur = monthsShort.map((_, i) => globalData.filter(r => {
+            const d = new Date(r.date);
+            return d.getFullYear() === latestYear && d.getMonth() === i;
+        }).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
+        
+        // Previous Year Data
+        let trendPre = monthsShort.map((_, i) => globalData.filter(r => {
+            const d = new Date(r.date);
+            return d.getFullYear() === prevYear && d.getMonth() === i;
+        }).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
+
         if(selectedMonthIndex !== null) {
             const days = new Date(latestYear, selectedMonthIndex + 1, 0).getDate();
             labels = Array.from({length: days}, (_, i) => i+1);
-            trend = labels.map(day => globalData.filter(r => { const d = new Date(r.date); return d.getFullYear() === latestYear && d.getMonth() === selectedMonthIndex && d.getDate() === day; }).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
+            trendCur = labels.map(day => globalData.filter(r => { 
+                const d = new Date(r.date); 
+                return d.getFullYear() === latestYear && d.getMonth() === selectedMonthIndex && d.getDate() === day; 
+            }).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
+            
+            trendPre = labels.map(day => globalData.filter(r => { 
+                const d = new Date(r.date); 
+                return d.getFullYear() === prevYear && d.getMonth() === selectedMonthIndex && d.getDate() === day; 
+            }).reduce((a,r) => a + (parseFloat(r.amount) || 0), 0));
         }
-        new Chart(document.getElementById('revLineChart'), { type: 'line', data: { labels, datasets: [{ data: trend, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 }] }, options: { ...opt, onClick: handleChartClick } });
-        new Chart(document.getElementById('ageChart'), { type: 'bar', data: { labels: ['0-18','19-35','36-50','51-65','66+'], datasets: [{ data: [cur.filter(r=>r.age<=18).length, cur.filter(r=>r.age>18 && r.age<=35).length, cur.filter(r=>r.age>35 && r.age<=50).length, cur.filter(r=>r.age>50 && r.age<=65).length, cur.filter(r=>r.age>65).length], backgroundColor: ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ef4444'], borderRadius: 8 }] }, options: { ...opt, indexAxis: 'y' } });
+
+        new Chart(document.getElementById('revLineChart'), { 
+            type: 'line', 
+            data: { 
+                labels, 
+                datasets: [
+                    { label: `${latestYear}`, data: trendCur, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 },
+                    { label: `${prevYear}`, data: trendPre, borderColor: '#94a3b8', borderDash: [5, 5], fill: false, tension: 0.4 }
+                ] 
+            }, 
+            options: { ...opt, onClick: handleChartClick } 
+        });
+
+        // AGE BRACKET CHART
+        new Chart(document.getElementById('ageChart'), { 
+            type: 'bar', 
+            data: { 
+                labels: ['0-18','19-35','36-50','51-65','66+'], 
+                datasets: [{ 
+                    data: [
+                        cur.filter(r => Number(r.age) <= 18).length,
+                        cur.filter(r => Number(r.age) > 18 && Number(r.age) <= 35).length,
+                        cur.filter(r => Number(r.age) > 35 && Number(r.age) <= 50).length,
+                        cur.filter(r => Number(r.age) > 50 && Number(r.age) <= 65).length,
+                        cur.filter(r => Number(r.age) > 65).length
+                    ], 
+                    backgroundColor: ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ef4444'], 
+                    borderRadius: 8 
+                }] 
+            }, 
+            options: { ...opt, indexAxis: 'y' } 
+        });
+
         new Chart(document.getElementById('genderChart'), { type: 'doughnut', data: { labels: ['Male','Female'], datasets: [{ data: [cur.filter(r=>r.gender==='Male').length, cur.filter(r=>r.gender==='Female').length], backgroundColor: ['#0ea5e9','#f472b6'] }] }, options: { ...opt, cutout: '75%' } });
         new Chart(document.getElementById('revComparisonChart'), { type: 'bar', data: { labels: ['Revenue'], datasets: [{ label: latestYear, data: [revC], backgroundColor: '#10b981' }, { label: prevYear, data: [revP], backgroundColor: '#94a3b8' }] }, options: { ...opt, plugins: { legend: { display: true } } } });
         new Chart(document.getElementById('cenComparisonChart'), { type: 'bar', data: { labels: ['Census'], datasets: [{ label: latestYear, data: [cenC], backgroundColor: '#3b82f6' }, { label: prevYear, data: [cenP], backgroundColor: '#94a3b8' }] }, options: { ...opt, plugins: { legend: { display: true } } } });
@@ -337,4 +387,3 @@
   </script>
 </body>
 </html>
-
