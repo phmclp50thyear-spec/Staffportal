@@ -61,8 +61,7 @@
               <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Actions</th>
             </tr>
           </thead>
-          <tbody id="recordsTableBody" class="divide-y divide-slate-50 bg-white">
-              </tbody>
+          <tbody id="recordsTableBody" class="divide-y divide-slate-50 bg-white"></tbody>
         </table>
       </div>
     </div>
@@ -104,19 +103,11 @@
         <div class="p-6 bg-slate-50 rounded-3xl space-y-4">
             <div id="procedureContainer" class="space-y-2">
                 <label class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 block">Procedures</label>
-                <div class="flex gap-2">
-                  <input type="text" list="procedureOptions" required class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none">
-                  <button type="button" onclick="addProcedureRow()" class="px-4 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition">+</button>
                 </div>
-            </div>
 
             <div id="addonContainer" class="space-y-2 pt-4 border-t border-slate-200">
                 <label class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 block">Add-ons (Optional)</label>
-                <div class="flex gap-2">
-                  <input type="text" list="addonOptions" class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none">
-                  <button type="button" onclick="handleAddOnRow()" class="px-4 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition">+</button>
                 </div>
-            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,32 +150,42 @@
     (function() {
       const supabase = window.supabase.createClient('https://xpdtzvxjlguhcxkgowsg.supabase.co', 'sb_publishable_KOm1sD7eOBpbJ_CiYtKL8w_RykN3krN');
       let allRecords = [];
+      let procedurePriceList = {};
+      let addonPriceList = {};
 
       supabase.auth.onAuthStateChange((event, session) => {
         if (!session) window.location.replace("index.html");
-        else { fetchRecords(); }
+        else { 
+            fetchRecords(); 
+            fetchPriceMasterLists();
+        }
       });
 
-      // IMPROVED: Combined Dropdown Logic
-      async function fetchDropdowns(records) {
-        // 1. Get from Master Tables
-        const { data: pData } = await supabase.from('procedures').select('name');
-        const { data: aData } = await supabase.from('addons').select('name');
+      async function fetchPriceMasterLists() {
+        // Updated table name to 'procedures'
+        const { data: pData } = await supabase.from('procedures').select('name, price');
+        const { data: aData } = await supabase.from('addons').select('name, price');
         
-        // 2. Get from existing data in patient_records to ensure everything is captured
-        const existingProcs = new Set((pData || []).map(x => x.name));
-        const existingAddons = new Set((aData || []).map(x => x.name));
+        if (pData) pData.forEach(item => procedurePriceList[item.name] = parseFloat(item.price || 0));
+        if (aData) aData.forEach(item => addonPriceList[item.name] = parseFloat(item.price || 0));
+        
+        updateDropdownUI();
+      }
 
-        records.forEach(r => {
-            if (r.procedures) r.procedures.forEach(p => existingProcs.add(p));
-            if (r.add_on) {
-                const addons = Array.isArray(r.add_on) ? r.add_on : [r.add_on];
-                addons.forEach(a => existingAddons.add(a));
-            }
+      function updateDropdownUI() {
+        document.getElementById('procedureOptions').innerHTML = Object.keys(procedurePriceList).sort().map(x => `<option value="${x}">`).join('');
+        document.getElementById('addonOptions').innerHTML = Object.keys(addonPriceList).sort().map(x => `<option value="${x}">`).join('');
+      }
+
+      window.calculateTotal = function() {
+        let total = 0;
+        document.querySelectorAll('#procedureContainer input').forEach(input => {
+          total += procedurePriceList[input.value] || 0;
         });
-
-        document.getElementById('procedureOptions').innerHTML = Array.from(existingProcs).sort().map(x => `<option value="${x}">`).join('');
-        document.getElementById('addonOptions').innerHTML = Array.from(existingAddons).sort().map(x => `<option value="${x}">`).join('');
+        document.querySelectorAll('#addonContainer input').forEach(input => {
+          total += addonPriceList[input.value] || 0;
+        });
+        document.getElementById('f-amount').value = total.toFixed(2);
       }
 
       async function fetchRecords() {
@@ -192,7 +193,6 @@
         if (data) { 
             allRecords = data; 
             renderTable(data); 
-            fetchDropdowns(data); // Call dropdown refresh with new record data
         }
       }
 
@@ -236,7 +236,6 @@
         }).join('');
       }
 
-      // Search Logic
       document.getElementById('searchInput').onkeyup = (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allRecords.filter(r => 
@@ -247,7 +246,36 @@
         renderTable(filtered);
       };
 
-      // Modal Logic
+      window.addProcedureRow = (val = '') => {
+        const container = document.getElementById('procedureContainer');
+        const div = document.createElement('div');
+        div.className = "flex gap-2 mt-2";
+        const isFirst = container.children.length <= 1;
+        div.innerHTML = `
+          <input type="text" list="procedureOptions" value="${val}" oninput="calculateTotal()" required class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none">
+          ${isFirst ? 
+            `<button type="button" onclick="addProcedureRow()" class="px-4 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition">+</button>` : 
+            `<button type="button" onclick="this.parentElement.remove(); calculateTotal();" class="px-4 bg-red-50 text-red-500 rounded-xl font-bold">×</button>`
+          }
+        `;
+        container.appendChild(div);
+      };
+
+      window.handleAddOnRow = (val = '') => {
+        const container = document.getElementById('addonContainer');
+        const div = document.createElement('div');
+        div.className = "flex gap-2 mt-2";
+        const isFirst = container.children.length <= 1;
+        div.innerHTML = `
+          <input type="text" list="addonOptions" value="${val}" oninput="calculateTotal()" class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none">
+          ${isFirst ? 
+            `<button type="button" onclick="handleAddOnRow()" class="px-4 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition">+</button>` : 
+            `<button type="button" onclick="this.parentElement.remove(); calculateTotal();" class="px-4 bg-red-50 text-red-500 rounded-xl font-bold">×</button>`
+          }
+        `;
+        container.appendChild(div);
+      };
+
       window.editRecord = (r) => {
         document.getElementById('modalTitle').innerText = "Edit Record";
         document.getElementById('f-id').value = r.id;
@@ -260,26 +288,14 @@
         document.getElementById('f-amount').value = r.amount;
         document.getElementById('f-guarantor').value = r.guarantor === 'N/A' ? '' : r.guarantor;
         
-        const pContainer = document.getElementById('procedureContainer');
-        pContainer.innerHTML = '<label class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 block">Procedures</label>';
-        r.procedures.forEach((p, i) => {
-          const div = document.createElement('div'); div.className = "flex gap-2 mt-2";
-          div.innerHTML = `<input type="text" list="procedureOptions" value="${p}" required class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none">${i === 0 ? `<button type="button" onclick="addProcedureRow()" class="px-4 bg-emerald-500 text-white rounded-xl font-bold">+</button>` : `<button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-500 rounded-xl font-bold">×</button>`}`;
-          pContainer.appendChild(div);
-        });
+        document.getElementById('procedureContainer').innerHTML = '<label class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 block">Procedures</label>';
+        r.procedures.forEach(p => addProcedureRow(p));
 
-        const aContainer = document.getElementById('addonContainer');
-        aContainer.innerHTML = '<label class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 block">Add-ons (Optional)</label>';
+        document.getElementById('addonContainer').innerHTML = '<label class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 block">Add-ons (Optional)</label>';
         const addOnList = Array.isArray(r.add_on) ? r.add_on : [];
-        if (addOnList.length === 0) {
-            handleAddOnRow();
-        } else {
-            addOnList.forEach((a, i) => {
-                const div = document.createElement('div'); div.className = "flex gap-2 mt-2";
-                div.innerHTML = `<input type="text" list="addonOptions" value="${a}" class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none">${i === 0 ? `<button type="button" onclick="handleAddOnRow()" class="px-4 bg-blue-500 text-white rounded-xl font-bold">+</button>` : `<button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-500 rounded-xl font-bold">×</button>`}`;
-                aContainer.appendChild(div);
-            });
-        }
+        if (addOnList.length === 0) handleAddOnRow();
+        else addOnList.forEach(a => handleAddOnRow(a));
+
         toggleModal(true);
       };
 
@@ -300,21 +316,11 @@
             document.getElementById('modalTitle').innerText = "New Transaction";
             const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('f-date').value = now.toISOString().slice(0,16);
-            document.getElementById('procedureContainer').innerHTML = '<label class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 block">Procedures</label><div class="flex gap-2 mt-2"><input type="text" list="procedureOptions" required class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none"><button type="button" onclick="addProcedureRow()" class="px-4 bg-emerald-500 text-white rounded-xl font-bold">+</button></div>';
-            document.getElementById('addonContainer').innerHTML = '<label class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 block">Add-ons (Optional)</label><div class="flex gap-2 mt-2"><input type="text" list="addonOptions" class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none"><button type="button" onclick="handleAddOnRow()" class="px-4 bg-blue-500 text-white rounded-xl font-bold">+</button></div>';
+            document.getElementById('procedureContainer').innerHTML = '<label class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 block">Procedures</label>';
+            addProcedureRow();
+            document.getElementById('addonContainer').innerHTML = '<label class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 block">Add-ons (Optional)</label>';
+            handleAddOnRow();
         }
-      };
-
-      window.addProcedureRow = () => {
-        const div = document.createElement('div'); div.className = "flex gap-2 mt-2";
-        div.innerHTML = `<input type="text" list="procedureOptions" placeholder="Select Procedure" class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none"><button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-500 rounded-xl font-bold">×</button>`;
-        document.getElementById('procedureContainer').appendChild(div);
-      };
-
-      window.handleAddOnRow = () => {
-        const div = document.createElement('div'); div.className = "flex gap-2 mt-2";
-        div.innerHTML = `<input type="text" list="addonOptions" placeholder="Select Add-on" class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none"><button type="button" onclick="this.parentElement.remove()" class="px-4 bg-red-50 text-red-500 rounded-xl font-bold">×</button>`;
-        document.getElementById('addonContainer').appendChild(div);
       };
 
       document.getElementById('transactionForm').onsubmit = async (e) => {
